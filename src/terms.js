@@ -1,0 +1,156 @@
+// Generic role vocabulary. No third-party job-board links are included.
+export const terminology = [
+  {
+    cn: '产品刊登与上架',
+    en: 'Product listing',
+    category: '电商运营',
+    definition: '将商品资料录入平台并发布为可销售商品。简历可写具体的上架执行工作。',
+    evidence: 'needs_confirmation',
+    resumeEvidence: '通用岗位词汇示例，不代表当前使用者具备该经历；请根据本人真实材料确认后使用。',
+  },
+  {
+    cn: 'Listing 创建与优化',
+    en: 'Listing creation and optimization',
+    category: '电商运营',
+    definition: '创建、维护商品详情信息，并改进标题、描述、图片或关键词等已实际负责的部分。',
+    evidence: 'needs_confirmation',
+    resumeEvidence: '通用岗位词汇示例，不代表当前使用者具备该经历；请根据本人真实材料确认后使用。',
+  },
+  {
+    cn: '关键词优化',
+    en: 'Keyword optimization',
+    category: '电商运营',
+    definition:
+      '调整商品页面关键词，帮助准确表达产品属性并匹配相关搜索。不要由此推导已做广告关键词投放。',
+    evidence: 'needs_confirmation',
+    resumeEvidence: '通用岗位词汇示例，不代表当前使用者具备该经历；请根据本人真实材料确认后使用。',
+  },
+  {
+    cn: '五点描述',
+    en: 'Product bullet points',
+    category: '电商运营',
+    definition: '亚马逊商品页面以要点形式呈现的核心功能、卖点与信息。英文宜用 bullet points。',
+    evidence: 'needs_confirmation',
+    resumeEvidence: '通用岗位词汇示例，不代表当前使用者具备该经历；请根据本人真实材料确认后使用。',
+  },
+  {
+    cn: '亚马逊 A+ 页面',
+    en: 'Amazon A+ Content',
+    category: '电商运营',
+    definition: '亚马逊商品展示中的增强图文内容。简历可写页面设计、图文排版与视觉优化。',
+    evidence: 'needs_confirmation',
+    resumeEvidence: '通用岗位词汇示例，不代表当前使用者具备该经历；请根据本人真实材料确认后使用。',
+  },
+  {
+    cn: '市场调研',
+    en: 'Market research',
+    category: '产品与调研',
+    definition: '收集目标市场需求、市场趋势及相关产品信息，为判断产品方向提供资料。',
+    evidence: 'needs_confirmation',
+    resumeEvidence: '通用岗位词汇示例，不代表当前使用者具备该经历；请根据本人真实材料确认后使用。',
+  },
+  {
+    cn: '竞品分析',
+    en: 'Competitor analysis',
+    category: '产品与调研',
+    definition:
+      '比较同类产品的功能、定位、卖点或其他实际调研维度。不要补写未提供的方法、工具或报告数量。',
+    evidence: 'needs_confirmation',
+    resumeEvidence: '通用岗位词汇示例，不代表当前使用者具备该经历；请根据本人真实材料确认后使用。',
+  },
+  {
+    cn: '用户反馈收集与整理',
+    en: 'User feedback collection and synthesis',
+    category: '产品与调研',
+    definition: '收集使用者意见并归纳需求与问题，为产品优化提供参考。',
+    evidence: 'needs_confirmation',
+    resumeEvidence: '通用岗位词汇示例，不代表当前使用者具备该经历；请根据本人真实材料确认后使用。',
+  },
+  {
+    cn: '英文文案撰写',
+    en: 'English copywriting',
+    category: '内容创作',
+    definition: '撰写面向英文读者的商品或推广文字；使用 AI 时可表述为辅助撰写，保留人工核对。',
+    evidence: 'needs_confirmation',
+    resumeEvidence: '通用岗位词汇示例，不代表当前使用者具备该经历；请根据本人真实材料确认后使用。',
+  },
+  {
+    cn: '推广素材制作',
+    en: 'Promotional content production',
+    category: '内容创作',
+    definition: '整合图片、文字与产品信息形成展示或推广素材，具体形式应对应实际产出。',
+    evidence: 'needs_confirmation',
+    resumeEvidence: '通用岗位词汇示例，不代表当前使用者具备该经历；请根据本人真实材料确认后使用。',
+  },
+  {
+    cn: '选品与采购支持',
+    en: 'Product sourcing and procurement support',
+    category: '选品与采购',
+    definition:
+      '调研适合目标市场的商品并为采购选择提供辅助资料。支持工作不等于独立负责采购全流程。',
+    evidence: 'needs_confirmation',
+    resumeEvidence: '通用岗位词汇示例，不代表当前使用者具备该经历；请根据本人真实材料确认后使用。',
+  },
+  {
+    cn: '供应商报价对比',
+    en: 'Supplier quotation comparison',
+    category: '选品与采购',
+    definition:
+      '比较供应商报价以支持选品或采购判断。不要由比价扩写为供应商开发、商务谈判或合同签订。',
+    evidence: 'needs_confirmation',
+    resumeEvidence: '通用岗位词汇示例，不代表当前使用者具备该经历；请根据本人真实材料确认后使用。',
+  },
+  {
+    cn: '样品比对',
+    en: 'Product sample comparison',
+    category: '选品与采购',
+    definition: '比较候选产品样品并支持最终产品选择。未确认测试标准时不写质量认证或独立品控。',
+    evidence: 'needs_confirmation',
+    resumeEvidence: '通用岗位词汇示例，不代表当前使用者具备该经历；请根据本人真实材料确认后使用。',
+  },
+  {
+    cn: 'AI 图像生成',
+    en: 'AI image generation',
+    category: 'AI 创作',
+    definition:
+      '通过生成式 AI 制作商品图、模特展示图或使用场景图。可列具体使用工具，但不推导模型训练经验。',
+    evidence: 'needs_confirmation',
+    resumeEvidence: '通用岗位词汇示例，不代表当前使用者具备该经历；请根据本人真实材料确认后使用。',
+  },
+  {
+    cn: '商品视频制作',
+    en: 'Product video production',
+    category: 'AI 创作',
+    definition:
+      '制作展示商品信息或使用方式的视频；可分别标注 AI 生成与常规剪辑。不得补写发布量、播放量或转化效果。',
+    evidence: 'needs_confirmation',
+    resumeEvidence: '通用岗位词汇示例，不代表当前使用者具备该经历；请根据本人真实材料确认后使用。',
+  },
+  {
+    cn: '广告成本销售比（ACoS）',
+    en: 'Advertising Cost of Sales (ACoS)',
+    category: '待确认能力',
+    definition:
+      '广告支出与广告归因销售额的比值。它是广告效果指标；仅了解定义不能写为具备投放或优化经验。',
+    evidence: 'needs_confirmation',
+    resumeEvidence: '通用岗位词汇示例，不代表当前使用者具备该经历；请根据本人真实材料确认后使用。',
+  },
+  {
+    cn: '亚马逊物流（FBA）',
+    en: 'Fulfillment by Amazon (FBA)',
+    category: '待确认能力',
+    definition:
+      '由亚马逊提供仓储、拣货配送等履约服务的模式。产品上架经历不自动代表 FBA 备货或库存管理经验。',
+    evidence: 'needs_confirmation',
+    resumeEvidence: '通用岗位词汇示例，不代表当前使用者具备该经历；请根据本人真实材料确认后使用。',
+  },
+  {
+    cn: '产品本地化',
+    en: 'Product localization',
+    category: '待确认能力',
+    definition:
+      '针对目标市场适配语言、文化或产品呈现等内容。跨文化沟通、英文写作不自动等于负责完整本地化流程。',
+    evidence: 'needs_confirmation',
+    resumeEvidence: '通用岗位词汇示例，不代表当前使用者具备该经历；请根据本人真实材料确认后使用。',
+  },
+];

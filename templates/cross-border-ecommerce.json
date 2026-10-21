@@ -1,0 +1,18 @@
+{
+  "id": "cross-border-ecommerce",
+  "name": "跨境电商运营",
+  "language": "zh",
+  "region": "深圳",
+  "salary": "8–10K",
+  "target": {
+    "zh": "跨境电商运营 / 亚马逊运营",
+    "en": "Cross-border E-commerce Operations / Amazon Operations"
+  },
+  "description": "适合亚马逊、Ozon、TEMU 等平台的运营岗位。",
+  "guidance": [
+    "突出 Listing、五点描述、关键词、A+ 页面、选品、供应商和竞品分析。",
+    "只写在平台后台实际做过的动作，不要补广告、ACoS 或 FBA 数据。",
+    "按平台/品类组织经历，保留可核实的日期。"
+  ],
+  "doNotClaim": ["广告投放", "ACoS", "FBA", "销售额增长", "独立操盘"]
+}

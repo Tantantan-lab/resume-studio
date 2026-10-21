@@ -1,0 +1,16 @@
+# dependencies
+node_modules/
+
+# build output
+dist/
+
+# personal data, exported resumes, research dumps
+private/
+site/
+
+# tooling / local state
+.claude/
+.wondercv-profile/
+.DS_Store
+*.log
+target/

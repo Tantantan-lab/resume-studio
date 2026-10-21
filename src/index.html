@@ -1,0 +1,170 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      http-equiv="Content-Security-Policy"
+      content="default-src 'self' blob: data:; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self'; connect-src 'self' ws:; object-src 'none'; base-uri 'none'; form-action 'none'"
+    />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <meta
+      name="description"
+      content="中英文简历编辑器，支持 Word 导入、模块编辑、实时预览和 Word/PDF 导出。"
+    />
+    <title>简历工坊 · Resume Studio</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div id="app">
+      <header class="topbar">
+        <a class="brand" href="#"
+          ><span class="brand-mark">R<span>·</span></span
+          ><span>简历工坊<small>RESUME STUDIO</small></span></a
+        >
+        <div class="doc-meta">
+          <input id="document-title" aria-label="简历文件名" maxlength="80" /><span
+            id="save-status"
+            role="status"
+            >已保存到本机</span
+          >
+        </div>
+        <div class="top-actions">
+          <button class="btn quiet" id="version-btn">版本记录</button
+          ><button class="btn" id="import-btn"><span data-icon="upload"></span>导入简历</button>
+          <div class="download-menu">
+            <button
+              class="btn primary"
+              id="download-btn"
+              type="button"
+              aria-haspopup="menu"
+              aria-expanded="false"
+            >
+              <span data-icon="download"></span>下载<span class="download-caret" aria-hidden="true"
+                >▾</span
+              >
+            </button>
+            <div class="download-options" id="download-options" role="menu" hidden>
+              <button type="button" role="menuitem" data-export="word-visual">
+                <span data-icon="image"></span
+                ><span class="download-copy"
+                  ><strong>Word（与预览一致）</strong><small>.docx · 图片版</small></span
+                ></button
+              ><button type="button" role="menuitem" data-export="word">
+                <span data-icon="file"></span
+                ><span class="download-copy"
+                  ><strong>Word（可编辑）</strong><small>.docx · 排版近似</small></span
+                ></button
+              ><button type="button" role="menuitem" data-export="pdf">
+                <span data-icon="file"></span
+                ><span class="download-copy"
+                  ><strong>PDF（图片版）</strong><small>A4 · 与预览一致</small></span
+                ></button
+              ><button type="button" role="menuitem" data-export="pdf-text">
+                <span data-icon="file"></span
+                ><span class="download-copy"
+                  ><strong>PDF（文字版）</strong><small>可搜索/复制 · 打印另存</small></span
+                ></button
+              ><button type="button" role="menuitem" data-export="png">
+                <span data-icon="image"></span
+                ><span class="download-copy"
+                  ><strong>图片</strong><small>.png · 适合直接发送</small></span
+                >
+              </button>
+              <div class="download-sep" role="separator"></div>
+              <button type="button" role="menuitem" data-export="json">
+                <span data-icon="file"></span
+                ><span class="download-copy"
+                  ><strong>JSON 数据</strong><small>完整双语内容与排版</small></span
+                >
+              </button>
+            </div>
+          </div>
+        </div>
+      </header>
+      <div class="app-layout">
+        <aside class="sidebar">
+          <div class="sidebar-label">我的</div>
+          <nav>
+            <button class="nav-item" data-section="library">
+              <span data-icon="layers"></span><span>我的简历</span
+              ><span class="count" id="library-count">0</span>
+            </button>
+          </nav>
+          <div class="sidebar-label section-label">简历内容</div>
+          <nav id="module-nav" aria-label="编辑模块"></nav>
+          <div class="sidebar-label section-label">编辑工具</div>
+          <nav>
+            <button class="nav-item" data-section="style">
+              <span data-icon="sliders"></span><span>字体与排版</span></button
+            ><button class="nav-item" data-section="terms">
+              <span data-icon="book"></span><span>岗位词库</span><span class="count">18</span>
+            </button>
+          </nav>
+          <div class="sidebar-footer">
+            <span data-icon="shield"></span><strong>材料留在浏览器</strong>
+            <p>自动保存至本机。导入的文件由浏览器处理。</p>
+            <button id="help-btn">使用说明 <span>↗</span></button>
+          </div>
+        </aside>
+        <main class="main">
+          <div class="workspace-top">
+            <div>
+              <span class="eyebrow">RESUME EDITOR</span>
+              <h1>简历编辑</h1>
+            </div>
+            <div class="language-switch" role="group" aria-label="简历语言">
+              <button
+                id="lang-toggle"
+                type="button"
+                data-active-lang="zh"
+                aria-label="切换中英文简历"
+                aria-pressed="false"
+                title="切换中英文简历 / Toggle resume language"
+              >
+                <span class="lang-option lang-option-zh">中文</span
+                ><span class="lang-option lang-option-en">English</span>
+              </button>
+            </div>
+          </div>
+          <div class="workspace">
+            <section class="editor-pane" aria-label="内容编辑"><div id="editor"></div></section>
+            <section class="preview-pane" aria-label="简历预览">
+              <div class="preview-toolbar">
+                <div>
+                  <span class="live-dot"></span><strong>实时预览</strong
+                  ><span class="paper-tag">A4</span>
+                </div>
+                <div class="preview-controls">
+                  <span id="page-status">一页预览</span
+                  ><button id="zoom-out" aria-label="缩小预览">−</button
+                  ><span id="zoom-label">65%</span
+                  ><button id="zoom-in" aria-label="放大预览">＋</button>
+                </div>
+              </div>
+              <div class="paper-stage">
+                <div id="sheet-wrap"><article id="resume-preview" class="resume"></article></div>
+              </div>
+              <div class="preview-foot">
+                <span>排版与内容同步更新</span><span id="font-summary"></span>
+              </div>
+            </section>
+          </div>
+        </main>
+      </div>
+    </div>
+    <div id="print-root"></div>
+    <input id="import-file" type="file" accept=".json,.docx,.txt,.md" hidden /><input
+      id="photo-file"
+      type="file"
+      accept="image/jpeg,image/png,image/webp"
+      hidden
+    /><input id="font-file" type="file" accept=".pdf" hidden />
+    <div id="toast" class="toast" role="status"></div>
+    <dialog id="modal"><div id="modal-body"></div></dialog>
+    <script src="/vendor/docx.js"></script>
+    <script src="/vendor/jszip.js"></script>
+    <script src="/vendor/pdf-lib.js"></script>
+    <script type="module" src="app.js"></script>
+  </body>
+</html>

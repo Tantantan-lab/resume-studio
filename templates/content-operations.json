@@ -1,0 +1,18 @@
+{
+  "id": "content-operations",
+  "name": "内容运营 / 内容营销",
+  "language": "zh",
+  "region": "深圳",
+  "salary": "8–10K",
+  "target": {
+    "zh": "内容运营 / 内容营销",
+    "en": "Content Operations / Content Marketing"
+  },
+  "description": "适合内容运营、新媒体、品牌内容与海外社媒岗位。",
+  "guidance": [
+    "突出图文/短视频、脚本、视觉素材、AI 工具和英文文案。",
+    "没有账号增长数据就不要写；可写内容产出与素材数量（有依据时）。",
+    "作品集链接放在 basics.links；没有就留空。"
+  ],
+  "doNotClaim": ["账号涨粉", "爆款率", "投放 ROI", "独立负责账号"]
+}

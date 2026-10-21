@@ -1,0 +1,18 @@
+{
+  "id": "marketing-product",
+  "name": "市场营销 / 产品运营",
+  "language": "zh",
+  "region": "深圳",
+  "salary": "6–8K",
+  "target": {
+    "zh": "市场营销 / 产品运营",
+    "en": "Marketing / Product Operations"
+  },
+  "description": "适合国内/海外市场营销、产品运营、市场助理。",
+  "guidance": [
+    "优先写市场调研、竞品分析、KOL/活动执行、内容素材和跨部门协作。",
+    "每条 bullet 用动作 + 产出 + 结果；没有数字就不写数字。",
+    "英文档案使用同一批事实，不要逐字机翻。"
+  ],
+  "doNotClaim": ["付费投放", "SEO/SEM", "ACoS", "FBA", "账号增长", "销售业绩"]
+}
