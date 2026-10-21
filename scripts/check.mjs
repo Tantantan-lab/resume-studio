@@ -11,7 +11,10 @@ function sourceFiles(dir) {
   });
 }
 
-const files = ['src', 'scripts', 'tests'].flatMap(sourceFiles).sort();
+const files = ['src', 'scripts', 'tests']
+  .flatMap(sourceFiles)
+  .concat(['eslint.config.js', 'vite.config.js'])
+  .sort();
 for (const file of files) {
   const result = spawnSync(process.execPath, ['--check', file], { stdio: 'inherit' });
   if (result.status !== 0) process.exit(result.status || 1);

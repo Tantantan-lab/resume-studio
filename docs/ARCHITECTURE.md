@@ -6,18 +6,17 @@ Resume Studio is a static, local-first application. There is no runtime backend.
 
 ```
 Browser
-  ├─ index.html
-  ├─ styles.css
-  ├─ vendor/{docx,jszip,pdf-lib}.js
-  └─ app.js
-       ├─ data.js      demo state + library seeds
-       ├─ demo-photo.js  fictional portrait + legacy photo helper
-       ├─ demo-content.js  role factory + exact-identity demo replacement
-       ├─ terms.js     terminology
-       └─ io.js        import/export (DOCX, JSON, visual DOCX/PDF)
+  ├─ index.html            (Vite entry; module + bundled CSS)
+  ├─ public/               favicon.svg, vendor/{docx,jszip,pdf-lib}.js (classic globals)
+  └─ app.js  → src/lib/*   store, migrations, editor, library, preview, photo,
+                           versions, import UI, download menu, schema, exports
 ```
 
 `localStorage` is the database. JSON import/export is the portability layer. The local Agent CLI/API operates on files in `private/` and produces an importable JSON.
+
+## Build
+
+Vite (`vite.config.js`) uses `root: src`, `base: './'`, and writes to `dist/` with hashed `assets/index-*` files. The classic vendor scripts and favicon live in `src/public/` and are served as globals before the app module. `npm run preview` serves the built `dist/` through `scripts/serve.mjs`; `npm test` builds and runs the browser smoke test against it.
 
 ## State and storage
 

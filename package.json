@@ -1,12 +1,12 @@
 {
   "name": "resume-studio",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "private": true,
   "description": "Local-first bilingual resume editor with a resume library, A4 preview, and visual-accurate Word/PDF/PNG export.",
   "type": "module",
   "scripts": {
-    "dev": "node scripts/serve.mjs src",
-    "build": "node scripts/build.mjs",
+    "dev": "vite",
+    "build": "vite build",
     "preview": "node scripts/serve.mjs dist",
     "check": "node scripts/check.mjs",
     "test": "npm run build && node tests/smoke.mjs",
@@ -21,9 +21,10 @@
     "eslint": "^9.39.4",
     "globals": "^17.13.0",
     "playwright-core": "^1.64.1",
-    "prettier": "3.9.10"
+    "prettier": "3.9.10",
+    "vite": "^8.3.4"
   },
   "engines": {
-    "node": ">=20"
+    "node": "^20.19.0 || >=22.12.0"
   }
 }

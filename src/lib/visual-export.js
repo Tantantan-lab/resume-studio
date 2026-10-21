@@ -25,7 +25,10 @@ export async function renderPreviewCanvas() {
     .join('\n');
   const width = Math.round((210 * 96) / 25.4);
   const height = Math.max(Math.round((297 * 96) / 25.4), source.scrollHeight, source.offsetHeight);
-  const wrapper = `<div xmlns="http://www.w3.org/1999/xhtml" style="margin:0;padding:0;background:#fff;"><style>${css.replace(/&/g, '&amp;')}</style>${new XMLSerializer().serializeToString(clone)}</div>`;
+  // Vite's CSS minifier may emit modern range queries (`width <= ...`).
+  // `<` is illegal in XML text, so escape it before inline SVG serialization.
+  const safeCss = css.replace(/&/g, '&amp;').replace(/</g, '&lt;');
+  const wrapper = `<div xmlns="http://www.w3.org/1999/xhtml" style="margin:0;padding:0;background:#fff;"><style>${safeCss}</style>${new XMLSerializer().serializeToString(clone)}</div>`;
   const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}"><foreignObject width="100%" height="100%">${wrapper}</foreignObject></svg>`;
   const url = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg);
   const img = await new Promise((res, rej) => {

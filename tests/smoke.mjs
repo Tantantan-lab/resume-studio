@@ -43,6 +43,19 @@ try {
   await page.waitForTimeout(700);
 
   const title = await page.title();
+  const distHtml = fs.readFileSync('dist/index.html', 'utf8');
+  const assetRefs = [...distHtml.matchAll(/(?:src|href)="([^"]+)"/g)]
+    .map((match) => match[1])
+    .filter((ref) => !ref.startsWith('#'));
+  assert(assetRefs.length > 0, 'dist index has no asset references');
+  assert(
+    assetRefs.every((ref) => ref.startsWith('./')),
+    `Pages subpath risk: root-absolute asset reference in dist/index.html (${assetRefs.join(', ')})`,
+  );
+  assert(
+    assetRefs.some((ref) => ref.includes('./vendor/docx.js')),
+    'dist index should load the vendor classic script',
+  );
   assert(
     title.includes('市场营销') || title.includes('简历工坊'),
     `unexpected page title: ${title}`,

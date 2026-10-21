@@ -3,6 +3,7 @@ import http from 'node:http';
 import fs from 'node:fs';
 import path from 'node:path';
 import { normalizeState } from './lib/resume-schema.mjs';
+import { serveStatic } from './lib/static.mjs';
 
 const ROOT = process.cwd();
 const PORT = Number(process.env.AGENT_PORT || 4178);
@@ -10,21 +11,6 @@ const STATIC_ROOT = path.resolve(fs.existsSync(path.join(ROOT, 'dist')) ? 'dist'
 const PRIVATE = path.join(ROOT, 'private');
 const MASTER = path.join(PRIVATE, 'resume.json');
 const IMPORT_FILE = path.join(PRIVATE, 'agent', 'resume-import.json');
-const TYPES = {
-  '.html': 'text/html; charset=utf-8',
-  '.css': 'text/css; charset=utf-8',
-  '.js': 'text/javascript; charset=utf-8',
-  '.json': 'application/json; charset=utf-8',
-  '.svg': 'image/svg+xml',
-  '.png': 'image/png',
-  '.jpg': 'image/jpeg',
-  '.jpeg': 'image/jpeg',
-  '.webp': 'image/webp',
-  '.pdf': 'application/pdf',
-  '.ico': 'image/x-icon',
-  '.docx': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-};
-
 function json(res, status, body) {
   res.writeHead(status, {
     'Content-Type': 'application/json; charset=utf-8',
@@ -47,28 +33,6 @@ function backup() {
   ensure(dest);
   fs.copyFileSync(MASTER, dest);
   return dest;
-}
-
-function serveStatic(req, res, pathname) {
-  if (pathname === '/') pathname = '/index.html';
-  const file = path.resolve(STATIC_ROOT, '.' + pathname);
-  if (file !== STATIC_ROOT && !file.startsWith(STATIC_ROOT + path.sep)) {
-    res.writeHead(403);
-    res.end('Forbidden');
-    return;
-  }
-  fs.stat(file, (err, stat) => {
-    if (err || !stat.isFile()) {
-      res.writeHead(404);
-      res.end('Not found');
-      return;
-    }
-    res.writeHead(200, {
-      'Content-Type': TYPES[path.extname(file).toLowerCase()] || 'application/octet-stream',
-      'Cache-Control': 'no-store',
-    });
-    fs.createReadStream(file).pipe(res);
-  });
 }
 
 const server = http.createServer((req, res) => {
@@ -138,7 +102,7 @@ const server = http.createServer((req, res) => {
     json(res, 405, { ok: false, error: 'method not allowed' });
     return;
   }
-  serveStatic(req, res, pathname);
+  serveStatic(STATIC_ROOT, req, res, pathname);
 });
 
 server.listen(PORT, '127.0.0.1', () => {

@@ -3,11 +3,11 @@ import globals from 'globals';
 
 export default [
   {
-    ignores: ['dist/**', 'node_modules/**', 'private/**', 'site/**', 'src/vendor/**'],
+    ignores: ['dist/**', 'node_modules/**', 'private/**', 'site/**', 'src/public/vendor/**'],
   },
   js.configs.recommended,
   {
-    files: ['src/**/*.js', 'scripts/**/*.mjs', 'tests/**/*.mjs', 'eslint.config.js'],
+    files: ['src/**/*.js', 'scripts/**/*.mjs', 'tests/**/*.mjs', '*.config.js'],
     languageOptions: {
       ecmaVersion: 'latest',
       sourceType: 'module',

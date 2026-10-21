@@ -33,7 +33,7 @@
 
 ## 快速开始
 
-要求：Node.js 20+
+要求：Node.js 20.19+（或 22.12+）
 
 ```bash
 npm install
@@ -41,7 +41,7 @@ npm run dev
 # 打开 http://127.0.0.1:4173
 ```
 
-端口被占用时，可运行 `npm run dev -- --port 4180`（也支持 `PORT` 环境变量）。
+端口被占用时，可运行 `npm run dev -- --port 4180`。
 
 构建与预览：
 
@@ -62,7 +62,7 @@ npm run verify         # 格式、语法、单元检查及浏览器导出测试
 npm test               # 构建 + Playwright 冒烟测试（使用本机 Chrome，可用 CHROME_PATH 指定）
 ```
 
-> 测试需要本机安装 Chrome/Chromium；不会下载浏览器。浏览器测试会实际下载五种格式到临时目录，校验文件名、照片媒体和文件结构，结束后清理测试文件。
+> 测试需要本机安装 Chrome/Chromium；不会下载浏览器。浏览器测试会实际下载五种格式并触发文字版 PDF 打印，校验文件名、照片媒体和文件结构，结束后清理测试文件。
 
 ## 目录结构
 
@@ -76,10 +76,10 @@ npm test               # 构建 + Playwright 冒烟测试（使用本机 Chrome�
 │   ├── lib/             # store、迁移、编辑器、简历库、预览、照片、版本、导入、下载
 │   ├── terms.js         # 岗位词库
 │   ├── styles.css
-│   └── vendor/          # docx.js / JSZip / pdf-lib
+│   └── public/          # favicon 与 vendor/{docx,jszip,pdf-lib}.js
+├── vite.config.js       # Vite：root=src、base=./、outDir=dist
 ├── scripts/
-│   ├── serve.mjs        # 本地静态服务器
-│   ├── build.mjs        # src -> dist
+│   ├── serve.mjs        # 预览/测试用静态服务器（dist）
 │   ├── agent.mjs        # 本地 Agent CLI（导出/提示词/校验/应用）
 │   └── agent-server.mjs # 可选的本地 Agent HTTP API
 ├── tests/smoke.mjs      # Playwright 冒烟测试
@@ -156,7 +156,7 @@ git remote add origin git@github.com:<you>/resume-studio.git
 git push -u origin main
 ```
 
-`private/`、`dist/`、`node_modules/` 已被 `.gitignore` 忽略。
+`private/`、`dist/`、`node_modules/` 已被 `.gitignore` 忽略。Vite 构建后 `dist/index.html` 引用 `./assets/index-<hash>.js|css` 和 `./vendor/*.js`，可直接部署到任意子路径。
 
 ## 文档
 

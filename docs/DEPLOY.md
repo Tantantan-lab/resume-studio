@@ -49,4 +49,4 @@ npm test
 - `localStorage` 按域名/端口隔离：从本机迁到公网域名后，需要重新导入 JSON
 - 图片版 Word/PDF 与预览一致，但文字不可编辑；可编辑 Word 排版近似
 - 公开部署时请使用演示数据，或让用户自行导入；不要把 `private/` 提交
-- 如果使用 CDN，建议对 `index.html` 不缓存，或使用带 hash 的构建文件名；当前构建是简单静态复制
+- 构建由 Vite 完成：JS/CSS 输出为 `assets/index-<hash>.{js,css}`，仅需对 `index.html` 配置不缓存；`vendor/*.js` 与 `favicon.svg` 是 public 静态文件、不带 hash，请使用短缓存或重新验证；`base` 为 `./`，可部署在任意子路径（含 GitHub Pages 项目页）

@@ -22,7 +22,7 @@ npm run build
 
 - 主色：`src/styles.css` 的 `:root { --primary: ... }`
 - 品牌名：`src/index.html` 的 `.brand`
-- favicon：`src/favicon.svg`
+- favicon：`src/public/favicon.svg`
 - 简历字体/字号/页边距：应用内「字体与排版」，或 `src/demo/data.js` 的 `style`
 
 ## 修改简历库预置版本
@@ -48,7 +48,7 @@ mk('市场营销 / 产品运营', 'Marketing / Product Operations', '6–8K')
 ## 运行与构建
 
 ```bash
-npm run dev      # src，4173
-npm run build    # src -> dist
+npm run dev      # Vite dev server，4173
+npm run build    # vite build -> dist（带 hash）
 npm run preview  # dist，4173
 ```

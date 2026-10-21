@@ -65,6 +65,8 @@ test('static server accepts --port and survives malformed requests', async () =>
   const child = await start('scripts/serve.mjs', ['src', '--port', String(port)]);
   try {
     assert.equal((await request(port, '/')).status, 200);
+    assert.equal((await request(port, '/favicon.svg')).status, 200);
+    assert.equal((await request(port, '/vendor/docx.js')).status, 200);
     assert.equal((await request(port, '/%', 'GET')).status, 400);
     const head = await request(port, '/', 'HEAD');
     assert.equal(head.status, 200);
@@ -83,6 +85,8 @@ test('Agent API rejects malformed URLs without exiting', async () => {
     const health = await request(port, '/api/health');
     assert.equal(health.status, 200);
     assert.equal(JSON.parse(health.body).ok, true);
+    assert.equal((await request(port, '/favicon.svg')).status, 200);
+    assert.equal((await request(port, '/vendor/pdf-lib.js')).status, 200);
   } finally {
     await stop(child);
   }

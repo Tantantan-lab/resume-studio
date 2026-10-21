@@ -4,7 +4,7 @@ private/
 site/
 .claude/
 .wondercv-profile/
-src/vendor/
+src/public/vendor/
 package-lock.json
 docs/screenshots/
 *.log
