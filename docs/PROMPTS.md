@@ -32,7 +32,7 @@ Agent 输出必须是完整 schema，而不是 diff。`apply` 会备份旧版本
 
 ### 加一个基本信息字段
 
-> 在 `src/app.js` 的基本信息表单、`src/io.js` 的 `normalizeProfile`/DOCX 导入导出、`src/demo/data.js` 中加入 `basics.<field>`。保持中英文独立；旧数据缺失时给空值；不要改动 localStorage 键名。更新 `docs/DATA_MODEL.md`，运行 `npm run check && npm run build`。
+> 在 `src/app.js` 的基本信息表单、`src/lib/schema.js` 的 `normalizeProfile`/DOCX 导入导出、`src/demo/data.js` 中加入 `basics.<field>`。保持中英文独立；旧数据缺失时给空值；不要改动 localStorage 键名。更新 `docs/DATA_MODEL.md`，运行 `npm run check && npm run build`。
 
 ### 改样式但不改导出
 

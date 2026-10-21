@@ -71,6 +71,7 @@ npm test               # 构建 + Playwright 冒烟测试（使用本机 Chrome�
 │   ├── app.js           # 状态、简历库、编辑/预览、下载
 │   ├── io.js            # JSON/DOCX 导入导出、图片版 Word/PDF
 │   ├── demo/            # 虚构演示数据、岗位变体与头像
+│   ├── lib/             # 共享 schema、视觉导出、下载与简历命名工具
 │   ├── terms.js         # 岗位词库
 │   ├── styles.css
 │   └── vendor/          # docx.js / JSZip / pdf-lib
@@ -167,7 +168,8 @@ git push -u origin main
 
 ## Roadmap
 
-- [ ] 把 `src/app.js` 按 state / editor / preview / library / downloads 拆成 ES modules
+- [x] 抽出共享 schema、视觉导出、下载与简历命名工具
+- [ ] 继续把 `src/app.js` 按 state / library / editor / preview 拆分
 - [ ] Agent 更新后的页面自动同步（目前用导入 JSON）
 - [ ] AI 编辑框（可选联网模型；默认保持本地）
 - [ ] 更多 A4 模板与中文字体预设

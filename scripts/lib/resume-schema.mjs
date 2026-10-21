@@ -1,4 +1,4 @@
-import { normalizeState as normalizeBrowserState } from '../../src/io.js';
+import { normalizeState as normalizeBrowserState } from '../../src/lib/schema.js';
 
 // Agent-side wrapper around the exact same normalizer the browser uses.
 // Keep only agent-specific policy here: region-aware titles, project order and warnings.

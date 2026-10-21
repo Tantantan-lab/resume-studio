@@ -43,6 +43,13 @@ On edit:
 2. Debounced `save()` writes the active state and updates the active library entry.
 3. `renderPreview()` renders the paper and sets `document.title` / the top title input.
 
+## Shared modules
+
+- `src/lib/schema.js` — DOM-free normalization shared by browser and Agent
+- `src/lib/visual-export.js` — preview DOM → canvas → A4 pages
+- `src/lib/download.js` — browser download helper
+- `src/lib/resume-utils.js` — resume names and download file names
+
 ## Preview and exports
 
 `viewState()` returns the selected library entry while browsing the library, otherwise the active state. `renderPreview()` is the single renderer.
@@ -65,7 +72,7 @@ The image-based exports guarantee visual parity but are not text-editable. The e
 
 ## Agent bridge
 
-`scripts/agent.mjs` handles files only; it never touches browser storage. Browser and Agent normalization share `src/io.js`'s `normalizeState`; `scripts/lib/resume-schema.mjs` only adds Agent policy (project ordering, region-aware title, risk-word warnings).
+`scripts/agent.mjs` handles files only; it never touches browser storage. Browser and Agent normalization share `src/lib/schema.js`'s `normalizeState`; `scripts/lib/resume-schema.mjs` only adds Agent policy (project ordering, region-aware title, risk-word warnings).
 
 - `export` copies a master JSON into `private/agent/current.json`
 - `prompt` builds a fact-constrained prompt from chat history + current resume

@@ -49,6 +49,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Demo fixtures moved to `src/demo/` (data, roles, avatar)
 - Browser and Agent now share `src/io.js#normalizeState`; the Agent wrapper only adds policy
 - CI now runs the browser smoke test
+- Extracted `src/lib/schema.js`, `visual-export.js`, `download.js` and `resume-utils.js` from `app.js`/`io.js`
 
 ### Known limitations
 
