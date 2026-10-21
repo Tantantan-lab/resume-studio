@@ -2,24 +2,12 @@ import { applyDemoPhotoToState } from './demo/demo-photo.js';
 import { defaultState, demoRegion, demoRoles } from './demo/data.js';
 import { createDemoState, replaceLegacyDemoState } from './demo/demo-content.js';
 import { terminology } from './terms.js';
-import {
-  exportJson,
-  exportDocx,
-  exportDocxImage,
-  exportPdfImage,
-  importFile,
-  exportPrint,
-} from './io.js';
+import { exportJson, exportDocx, exportDocxImage, exportPdfImage, importFile } from './io.js';
 import { autoResumeName, resumeName, fileBase } from './lib/resume-utils.js';
 import { downloadBlob } from './lib/download.js';
 import { canvasBlob, renderPreviewCanvas, renderPreviewPages } from './lib/visual-export.js';
-const $ = (s) => document.querySelector(s);
-const esc = (v) =>
-  String(v ?? '').replace(
-    /[&<>"']/g,
-    (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c],
-  );
-const clone = (o) => JSON.parse(JSON.stringify(o));
+import { $, esc, clone } from './lib/util.js';
+import { icon, icons, notify, openModal } from './lib/ui.js';
 const KEY = 'resume-studio.v1';
 const LIB_KEY = KEY + '.library',
   ACTIVE_KEY = KEY + '.active';
@@ -30,9 +18,7 @@ let library = [],
 let state = clone(defaultState),
   section = 'basics',
   scale = 0.65,
-  saveTimer,
-  toastTimer,
-  importResult;
+  saveTimer;
 try {
   const cached = JSON.parse(localStorage.getItem(KEY));
   if (cached?.version === 1 && cached.profiles?.zh && cached.profiles?.en) state = cached;
@@ -252,29 +238,6 @@ try {
   // Keep all non-demo records intact if this optional migration cannot be saved.
 }
 
-const iconPaths = {
-  user: '<circle cx="12" cy="8" r="3"/><path d="M5 21v-3a7 7 0 0 1 14 0v3"/>',
-  education: '<path d="m2 9 10-5 10 5-10 5-10-5Z"/><path d="M6 11v6c4 3 8 3 12 0v-6M22 9v8"/>',
-  briefcase:
-    '<rect x="3" y="6" width="18" height="15" rx="2"/><path d="M8 6V3h8v3M3 12c5 4 13 4 18 0M10 13h4"/>',
-  layers: '<path d="m12 3 10 5-10 5L2 8l10-5ZM2 12l10 5 10-5M2 16l10 5 10-5"/>',
-  spark: '<path d="m12 3 2.5 6.5L21 12l-6.5 2.5L12 21l-2.5-6.5L3 12l6.5-2.5L12 3Z"/>',
-  sliders:
-    '<path d="M4 6h16M4 12h16M4 18h16"/><circle cx="8" cy="6" r="2" fill="white"/><circle cx="16" cy="12" r="2" fill="white"/><circle cx="10" cy="18" r="2" fill="white"/>',
-  book: '<path d="M12 5C8 2 4 3 2 4v16c3-2 6-2 10 0 4-2 7-2 10 0V4c-3-2-7-2-10 1ZM12 5v15"/>',
-  shield: '<path d="m12 2 8 3v6c0 5-4 9-8 11-4-2-8-6-8-11V5l8-3Z"/><path d="m8 12 3 3 5-6"/>',
-  upload: '<path d="M12 16V3m-4 4 4-4 4 4M4 15v6h16v-6"/>',
-  download: '<path d="M12 3v13m-4-4 4 4 4-4M4 16v5h16v-5"/>',
-  file: '<path d="M14 2H5v20h14V7l-5-5ZM14 2v6h5M8 12h8M8 16h8"/>',
-  image:
-    '<rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/><path d="m21 15-5-5L5 21"/>',
-};
-function icon(n) {
-  return `<svg viewBox="0 0 24 24" aria-hidden="true">${iconPaths[n] || iconPaths.file}</svg>`;
-}
-function icons() {
-  document.querySelectorAll('[data-icon]').forEach((e) => (e.innerHTML = icon(e.dataset.icon)));
-}
 const modules = [
   ['basics', '基本信息', 'user', '01'],
   ['education', '教育背景', 'education', '02'],
@@ -291,12 +254,6 @@ $('#module-nav').innerHTML = modules
 icons();
 function current() {
   return state.profiles[state.language];
-}
-function notify(t) {
-  $('#toast').textContent = t;
-  $('#toast').classList.add('visible');
-  clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => $('#toast').classList.remove('visible'), 3500);
 }
 function save() {
   clearTimeout(saveTimer);
@@ -922,13 +879,6 @@ function renderTerms(q) {
         }),
     );
 }
-function openModal(html) {
-  $('#modal-body').innerHTML = `<div class="modal-content">${html}</div>`;
-  $('#modal').showModal();
-  $('#modal')
-    .querySelectorAll('[data-close]')
-    .forEach((e) => (e.onclick = () => $('#modal').close()));
-}
 function renderVersions() {
   openModal(
     `<h2>本机版本记录</h2><p>版本只保存在当前浏览器，导出 JSON 可以跨设备继续编辑。</p><button class="btn primary" id="save-version">保存当前版本</button><div>${versions.length ? versions.map((v, i) => `<div class="version-row"><div><strong>${esc(v.label)}</strong><small>${esc(v.time)}</small></div><button class="btn" data-restore="${i}">恢复</button></div>`).join('') : '<p>还没有手动保存的版本。</p>'}</div><div class="modal-actions"><button class="btn" data-close>关闭</button></div>`,
@@ -953,7 +903,6 @@ function renderVersions() {
   );
 }
 function showImport(result) {
-  importResult = result;
   if (result.rawText) {
     openModal(
       `<h2>核对导入内容</h2><p>已提取文本。${result.state ? '可以使用识别出的结构化草稿，请对照原文检查。' : '原文件未能可靠识别为分区，将保留为一条待整理项目。'}</p>${result.warnings?.length ? `<p>${result.warnings.map(esc).join('<br>')}</p>` : ''}<textarea class="modal-text" id="import-review" aria-label="导入原文">${esc(result.rawText)}</textarea><div class="modal-actions"><button class="btn" data-close>取消</button><button class="btn primary" id="confirm-import">${result.state ? '导入识别草稿' : '保留文本并导入'}</button></div>`,
