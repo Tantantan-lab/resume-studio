@@ -48,7 +48,7 @@ Agent 输出必须是完整 schema，而不是 diff。`apply` 会备份旧版本
 
 ### 新增简历库模板
 
-> 在 `src/lib/store.js` 的 `seedLibrary()` 中增加一个 `mk(...)` 条目（岗位、英文岗位、薪资），并保持标题为「岗位 薪资 地区」。不要影响已有用户的 library；只影响首次初始化。
+> 在 `src/lib/store.js` 的 `seedLibrary()` 中增加一个 `demoRoles` 模板 条目（岗位、英文岗位、薪资），并保持标题为「岗位 薪资 地区」。不要影响已有用户的 library；只影响首次初始化。
 
 ## 人改流程
 

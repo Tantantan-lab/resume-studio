@@ -38,9 +38,9 @@ async function start(script, args = [], env = {}) {
   return child;
 }
 
-function request(port, path, method = 'GET') {
+function request(port, path, method = 'GET', headers = {}, body = null) {
   return new Promise((resolve, reject) => {
-    const req = http.request({ host: '127.0.0.1', port, path, method }, (res) => {
+    const req = http.request({ host: '127.0.0.1', port, path, method, headers }, (res) => {
       let body = '';
       res.setEncoding('utf8');
       res.on('data', (chunk) => {
@@ -49,6 +49,7 @@ function request(port, path, method = 'GET') {
       res.on('end', () => resolve({ status: res.statusCode, body }));
     });
     req.on('error', reject);
+    if (body !== null) req.write(body);
     req.end();
   });
 }
@@ -85,10 +86,27 @@ test('Agent API rejects malformed URLs without exiting', async () => {
   try {
     assert.equal((await request(port, '/%')).status, 400);
     assert.equal((await request(port, '/%00')).status, 400);
-    assert.equal((await request(port, '/api/health')).status, 200);
     const health = await request(port, '/api/health');
     assert.equal(health.status, 200);
-    assert.equal(JSON.parse(health.body).ok, true);
+    assert.deepEqual(JSON.parse(health.body), { ok: true });
+    assert.equal((await request(port, '/favicon.svg')).status, 200);
+    assert.equal((await request(port, '/vendor/pdf-lib.js')).status, 200);
+    const badOrigin = await request(
+      port,
+      '/api/resume',
+      'POST',
+      { 'Content-Type': 'application/json', Origin: 'https://evil.example' },
+      '{}',
+    );
+    assert.equal(badOrigin.status, 403);
+    const wrongType = await request(
+      port,
+      '/api/resume',
+      'POST',
+      { 'Content-Type': 'text/plain' },
+      '{}',
+    );
+    assert.equal(wrongType.status, 415);
     assert.equal((await request(port, '/favicon.svg')).status, 200);
     assert.equal((await request(port, '/vendor/pdf-lib.js')).status, 200);
   } finally {

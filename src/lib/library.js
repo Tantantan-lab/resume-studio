@@ -58,6 +58,10 @@ function newLibraryResume() {
 function deleteLibraryResume(id) {
   const entry = store.library.find((x) => x.id === id);
   if (!entry) return;
+  if (store.library.length <= 1) {
+    notify('至少保留一份简历。');
+    return;
+  }
   openModal(
     `<h2>删除这份简历？</h2><p>${esc(resumeName(entry))}</p><p>删除后无法恢复；建议先在当前简历里导出 JSON 备份。</p><div class="modal-actions"><button class="btn" data-close>取消</button><button class="btn primary" id="confirm-delete-resume">删除</button></div>`,
   );

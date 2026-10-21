@@ -2,7 +2,7 @@ import { $, esc } from './util.js';
 import { store, viewState } from './store.js';
 
 function date(x) {
-  return x ? x.replace('-', '.') : '';
+  return x ? esc(String(x).replace('-', '.')) : '';
 }
 function range(a, b) {
   return a || b ? `${date(a)}${a && b ? ' - ' : ''}${date(b)}` : '';

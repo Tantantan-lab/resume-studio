@@ -52,10 +52,12 @@ function textField(obj, key, max, warnings, path) {
     warnings.push(`${path}.${key} 超过 ${max} 字，已截断。`);
   return clean(value || '', max);
 }
-function arrayField(obj, key, limit, path) {
+function arrayField(obj, key, limit, path, warnings = []) {
   if (!Array.isArray(obj[key])) throw new Error(`${path}.${key} 必须为数组。`);
-  if (obj[key].length > limit)
-    throw new Error(`${path}.${key} 最多支持 ${limit} 项，请拆分文件后再导入。`);
+  if (obj[key].length > limit) {
+    warnings.push(`${path}.${key} 超过 ${limit} 项，已截断。`);
+    return obj[key].slice(0, limit);
+  }
   return obj[key];
 }
 function entryId(raw, prefix, index) {
@@ -188,7 +190,7 @@ function normalizeProfile(value, lang, warnings) {
   }
   function entries(key, fields) {
     const seen = new Set();
-    return arrayField(value, key, SECTION_LIMIT, root).map((item, index) => {
+    return arrayField(value, key, SECTION_LIMIT, root, warnings).map((item, index) => {
       if (!record(item)) throw new Error(`${root}.${key}[${index}] 必须为对象。`);
       const path = `${root}.${key}[${index}]`;
       let id = entryId(item.id, `${lang}-${key}`, index);
@@ -204,7 +206,7 @@ function normalizeProfile(value, lang, warnings) {
       for (const [field, max] of fields)
         output[field] = textField(item, field, max, warnings, path);
       if (key === 'experience' || key === 'projects') {
-        output.bullets = arrayField(item, 'bullets', BULLET_LIMIT, path).map(
+        output.bullets = arrayField(item, 'bullets', BULLET_LIMIT, path, warnings).map(
           (bullet, bulletIndex) => {
             if (typeof bullet !== 'string')
               throw new Error(`${path}.bullets[${bulletIndex}] 必须为文本。`);

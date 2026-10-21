@@ -22,7 +22,8 @@ function parseFlags(argv) {
 }
 
 async function loadState(file) {
-  if (file && fs.existsSync(file)) {
+  if (file) {
+    if (!fs.existsSync(file)) throw new Error(`找不到指定的简历文件: ${file}`);
     if (file.endsWith('.js') || file.endsWith('.mjs')) {
       const mod = await import(pathToFileURL(path.resolve(file)).href);
       return structuredClone(mod.defaultState || mod.state);

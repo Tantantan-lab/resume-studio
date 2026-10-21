@@ -131,9 +131,13 @@ export function seedLibrary() {
     updatedAt: now,
   }));
   store.library = [...variants, currentEntry];
-  store.activeResumeId = variants[0].id;
-  store.state = clone(variants[0].state);
-  store.librarySeeded = true;
+  if (isNewDemo) {
+    store.activeResumeId = variants[0].id;
+    store.state = clone(variants[0].state);
+  } else {
+    store.activeResumeId = currentEntry.id;
+  }
+  store.librarySeeded = isNewDemo;
   try {
     localStorage.setItem(LIB_KEY, JSON.stringify(store.library));
     localStorage.setItem(ACTIVE_KEY, store.activeResumeId);

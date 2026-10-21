@@ -71,7 +71,7 @@ export async function exportDocx(input) {
   const s = state.style;
   const margin = Math.round((s.marginMm * 1440) / 25.4);
   const width = Math.round((210 * 1440) / 25.4) - margin * 2;
-  const font = { name: s.fontEN, eastAsia: s.fontCN };
+  const font = { ascii: s.fontEN, hAnsi: s.fontEN, cs: s.fontEN, eastAsia: s.fontCN };
   const line = Math.round(s.lineHeight * 240);
   const body = Math.round(s.bodySize * 2);
   const color = s.accent.replace('#', '');

@@ -27,9 +27,15 @@ export function runEarlyMigrations() {
     const MK = KEY + '.migrate-20261020';
     if (!localStorage.getItem(MK)) {
       let changed = false;
+      const isDemo = (profile) => {
+        const b = profile?.basics;
+        return Boolean(
+          b && ['陈知遥', '林小溪'].includes(b.name) && b.email === 'demo@example.com',
+        );
+      };
       const apply = (profile, lang) => {
         const b = profile?.basics;
-        if (!b) return;
+        if (!b || !isDemo(profile)) return;
         if (!('salary' in b) || b.salary === '') {
           b.salary = LEGACY_DEFAULTS.salary;
           changed = true;

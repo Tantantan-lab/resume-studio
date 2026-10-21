@@ -149,6 +149,8 @@ npm run mcp   # stdio server；通常由 MCP 客户端拉起
 
 ## 隐私
 
+> GitHub Pages 的项目站点共享 `https://<user>.github.io` 源，`localStorage` 与同账号其他 Pages 项目共享。公开演示请只使用虚构数据；真实简历请用本地 4173 版本或专用域名。
+
 - 所有内容保存在浏览器 `localStorage`，不经过服务器
 - 没有账号、没有埋点、没有上传
 - 照片/联系方式只存在本机；清除站点数据会删除

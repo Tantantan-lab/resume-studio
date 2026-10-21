@@ -3,6 +3,7 @@ import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
 import { chromium } from 'playwright-core';
+import { defaultState } from '../src/demo/data.js';
 
 const PORT = 4177;
 const chromeCandidates = [
@@ -191,6 +192,17 @@ try {
       );
     }
   }
+  const wordFontXml = await page.evaluate(async (base64) => {
+    const zip = await window.JSZip.loadAsync(base64, { base64: true });
+    const documentXml = await zip.file('word/document.xml').async('string');
+    const stylesXml = await zip.file('word/styles.xml').async('string');
+    return documentXml + stylesXml;
+  }, exported.word.toString('base64'));
+  assert(
+    wordFontXml.includes('w:eastAsia="Arial Unicode MS"'),
+    'editable Word should preserve the configured Chinese font',
+  );
+
   assert(exported.pdf.subarray(0, 5).toString() === '%PDF-', 'invalid PDF signature');
   const pdfPages = await page.evaluate(async (base64) => {
     const bytes = Uint8Array.from(atob(base64), (char) => char.charCodeAt(0));
@@ -244,6 +256,94 @@ try {
     (await page.locator('.editor-heading h2').innerText()) === '项目经历',
     'DOCX import should land on the imported section',
   );
+  // Multi-page visual PDF must not drop pages.
+  const longState = structuredClone(defaultState);
+  longState.meta.title = '长简历测试';
+  const longBullets = Array.from(
+    { length: 40 },
+    (_, i) =>
+      `第 ${i + 1} 项：围绕目标市场完成用户调研、竞品分析与内容素材整理，支持推广方案制定。`,
+  );
+  for (const lang of ['zh', 'en']) {
+    longState.profiles[lang].experience = [
+      {
+        id: 'long-entry',
+        company: lang === 'zh' ? '示例公司' : 'Example Co',
+        role: lang === 'zh' ? '运营实习' : 'Operations Intern',
+        start: '2025-01',
+        end: '2025-03',
+        bullets: longBullets,
+      },
+    ];
+  }
+  const longPath = path.join(downloadDir, 'long-resume.json');
+  fs.writeFileSync(longPath, JSON.stringify(longState));
+  await page.setInputFiles('#import-file', longPath);
+  await page.waitForTimeout(700);
+  const longDownload = page.waitForEvent('download', { timeout: 20000 });
+  await page.click('#download-btn');
+  await page.click('[data-export="pdf"]');
+  const longPdf = await longDownload;
+  const longPdfPath = path.join(downloadDir, 'long-resume.pdf');
+  await longPdf.saveAs(longPdfPath);
+  const longPageCount = await page.evaluate(async (base64) => {
+    const bytes = Uint8Array.from(atob(base64), (char) => char.charCodeAt(0));
+    const pdf = await window.PDFLib.PDFDocument.load(bytes);
+    return pdf.getPageCount();
+  }, fs.readFileSync(longPdfPath).toString('base64'));
+  assert(longPageCount > 1, `multi-page PDF lost pages: ${longPageCount}`);
+
+  // Imported dates must be rendered as text, never as HTML.
+  const xssState = structuredClone(defaultState);
+  xssState.meta.title = 'XSS 测试';
+  xssState.profiles.zh.education[0].start =
+    '<img src=x onerror="window.__xss=(window.__xss||0)+1">';
+  const xssPath = path.join(downloadDir, 'xss-resume.json');
+  fs.writeFileSync(xssPath, JSON.stringify(xssState));
+  await page.setInputFiles('#import-file', xssPath);
+  await page.waitForTimeout(700);
+  assert((await page.evaluate(() => window.__xss || 0)) === 0, 'imported date executed script');
+  assert(
+    (await page.locator('#resume-preview img[src="x"]').count()) === 0,
+    'imported date rendered HTML',
+  );
+  assert(
+    (await page.locator('#resume-preview').innerText()).includes('<img'),
+    'imported date should be visible as escaped text',
+  );
+
+  // A cached personal resume with no library must become the active entry.
+  const upgradeContext = await browser.newContext();
+  const upgradePage = await upgradeContext.newPage();
+  await upgradePage.goto(`http://127.0.0.1:${PORT}/`, { waitUntil: 'networkidle' });
+  await upgradePage.waitForTimeout(500);
+  const customPhoto =
+    'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAusB9Wl2ZQAAAABJRU5ErkJggg==';
+  await upgradePage.evaluate((photo) => {
+    const key = 'resume-studio.v1';
+    const state = JSON.parse(localStorage.getItem(key));
+    state.profiles.zh.basics.name = '张三';
+    state.profiles.en.basics.name = 'ZHANG SAN';
+    state.profiles.zh.basics.photo = photo;
+    state.profiles.zh.basics.photoOriginal = photo;
+    localStorage.setItem(key, JSON.stringify(state));
+    localStorage.removeItem(key + '.library');
+    localStorage.removeItem(key + '.active');
+  }, customPhoto);
+  await upgradePage.reload({ waitUntil: 'networkidle' });
+  await upgradePage.waitForTimeout(700);
+  assert(
+    (await upgradePage.locator('[data-path="basics.name"]').inputValue()) === '张三',
+    'personal resume should stay active on first library seed',
+  );
+  assert((await upgradePage.locator('#library-count').innerText()) === '6', 'seeded library count');
+  assert(
+    (await upgradePage.locator('#resume-preview img.resume-photo').getAttribute('src')) ===
+      customPhoto,
+    'personal photo must not be replaced by the demo avatar',
+  );
+  await upgradeContext.close();
+
   assert(pageErrors.length === 0, `page errors: ${pageErrors.join('; ')}`);
   console.log('PASS: library preview/edit, titles, photo, five downloads and text PDF');
 } finally {

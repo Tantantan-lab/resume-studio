@@ -40,33 +40,41 @@ export function initDownloadMenu() {
           const type = item.dataset.export;
           closeDownload();
           downloadBtn.disabled = true;
+          const warnings = [];
+          const onWarning = (event) => warnings.push(event.detail?.message || '导出提示');
+          window.addEventListener('resume-io-warning', onWarning);
+          let success = '';
           try {
             if (type === 'json') {
               exportJson(viewState());
-              notify('已保存完整双语数据与排版设置。');
+              success = '已保存完整双语数据与排版设置。';
             } else if (type === 'word-visual') {
               const pages = await renderPreviewPages();
               await exportDocxImage(viewState(), pages);
-              notify('Word 已生成（与预览一致）。');
+              success = 'Word 已生成（与预览一致）。';
             } else if (type === 'word') {
               await exportDocx(viewState());
-              notify('可编辑 Word 已生成（排版近似）。');
+              success = '可编辑 Word 已生成（排版近似）。';
             } else if (type === 'pdf') {
               const pages = await renderPreviewPages();
               await exportPdfImage(viewState(), pages);
-              notify('PDF 已生成（与预览一致）。');
+              success = 'PDF 已生成（与预览一致）。';
             } else if (type === 'pdf-text') {
               syncPrintRoot();
-              notify('请在打印窗口选择“另存为 PDF”；文字可复制、搜索。');
+              success = '请在打印窗口选择“另存为 PDF”；文字可复制、搜索。';
               exportPrint();
             } else if (type === 'png') {
               notify('正在生成图片…');
               await exportPng();
-              notify('图片已生成。');
+              success = '图片已生成。';
             }
+            if (warnings.length) notify(`导出完成，但注意：${warnings.join('；')}`);
+            else if (success) notify(success);
           } catch (e) {
-            notify('导出失败：' + (e.message || '请重试'));
+            const detail = warnings.length ? `；${warnings.join('；')}` : '';
+            notify('导出失败：' + (e.message || '请重试') + detail);
           } finally {
+            window.removeEventListener('resume-io-warning', onWarning);
             downloadBtn.disabled = false;
           }
         }),

@@ -50,10 +50,10 @@ export async function renderPreviewCanvas() {
 }
 
 export async function renderPreviewPages() {
-  const { canvas, height, scale } = await renderPreviewCanvas();
+  const { canvas, scale } = await renderPreviewCanvas();
   const pageH = Math.round(1123 * scale);
   const pages = [];
-  for (let y = 0; y < height; y += pageH) {
+  for (let y = 0; y < canvas.height; y += pageH) {
     const c = document.createElement('canvas');
     c.width = canvas.width;
     c.height = pageH;

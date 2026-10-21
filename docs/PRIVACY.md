@@ -9,6 +9,8 @@
 
 清除浏览器站点数据会删除简历；请定期导出 JSON 备份。
 
+GitHub Pages 的 `<user>.github.io` 项目站点共享同一 origin，localStorage 会与同账号其他 Pages 项目共用；公开演示只应使用虚构数据，真实简历建议只在本地或专用域名使用。
+
 ## 公开仓库
 
 `src/demo/data.js` 是虚构演示数据。真实简历、联系方式、照片和求职记录应放在 `private/`（已在 `.gitignore` 中忽略），不要提交。

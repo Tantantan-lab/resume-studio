@@ -51,6 +51,19 @@ curl -X POST http://127.0.0.1:4178/api/resume \
 
 POST 成功后，在 **4173** 的应用里「导入简历」选择返回的 `importPath`。API 不会直接写浏览器 `localStorage`。
 
+## 安全边界
+
+- 只监听 `127.0.0.1`，并校验 `Host` 为 `127.0.0.1`/`localhost`
+- POST 只接受 `Content-Type: application/json`；跨站 `text/plain` 请求返回 415
+- 带 `Origin` 时只允许本机源；其他 Origin 返回 403
+- 可选 `AGENT_TOKEN`：设置后请求需带 `x-agent-token` 头
+- 写入使用临时文件 + rename，备份最多保留 50 份
+
+```bash
+AGENT_TOKEN=local-secret node scripts/agent-server.mjs
+curl -X POST ... -H 'x-agent-token: local-secret' ...
+```
+
 ## 数据要求
 
 - 必须是完整的 schema v1：`profiles.zh` 和 `profiles.en` 都要有
