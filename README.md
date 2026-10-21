@@ -4,15 +4,19 @@
 ![Local-first](https://img.shields.io/badge/privacy-local--first-2ea44f)
 ![Static](https://img.shields.io/badge/runtime-static%20%2F%20no%20backend-ff5b4e)
 ![Status](https://img.shields.io/badge/status-MVP-orange)
+[![CI](https://github.com/Tantantan-lab/resume-studio/actions/workflows/ci.yml/badge.svg)](https://github.com/Tantantan-lab/resume-studio/actions/workflows/ci.yml)
+[![Pages](https://github.com/Tantantan-lab/resume-studio/actions/workflows/pages.yml/badge.svg)](https://Tantantan-lab.github.io/resume-studio/)
 
 一个**本地优先**的中英双语简历编辑器：A4 实时预览、多份简历库、按岗位/薪资/地区命名、照片同步，以及和预览一致的 Word / PDF / PNG 导出。
+
+在线演示：**https://Tantantan-lab.github.io/resume-studio/**
 
 <p align="center">
   <img src="docs/screenshots/library.png" alt="我的简历" width="49%">
   <img src="docs/screenshots/editor.png" alt="编辑与下载" width="49%">
 </p>
 
-> 这是 MVP 版本：纯静态前端，无后端、无账号、无上传；AI 协作由**本地 Agent 工作流**完成（Codex / Claude / DeepSeek 读取聊天记录 → 输出 JSON → 本地校验导入）。
+> 这是 MVP 版本：纯静态前端，无后端、无账号、无上传；AI 协作由**本地 MCP Server / Agent 工作流**完成（Codex / Claude / DeepSeek 读取聊天记录 → 模板 + JSON → 校验导入）。
 
 ## 功能
 
