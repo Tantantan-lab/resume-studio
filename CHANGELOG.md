@@ -44,6 +44,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Local agent CLI/API prompt pack for Codex / Claude / DeepSeek
 - GitHub-style docs, CI, issue/PR templates, privacy notes
 
+### Added
+
+- Text-layer PDF export via browser print (searchable/copyable), alongside the visual PDF
+
 ### Changed
 
 - Demo fixtures moved to `src/demo/` (data, roles, avatar)

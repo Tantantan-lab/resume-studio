@@ -107,11 +107,18 @@ try {
 
   await page.click('#download-btn');
   assert(
-    (await page.locator('#download-options [data-export]').count()) === 5,
-    'download menu should expose 5 options',
+    (await page.locator('#download-options [data-export]').count()) === 6,
+    'download menu should expose 6 options',
   );
   const menuText = await page.locator('#download-options').innerText();
-  for (const label of ['Word（与预览一致）', 'Word（可编辑）', 'PDF', '图片', 'JSON']) {
+  for (const label of [
+    'Word（与预览一致）',
+    'Word（可编辑）',
+    'PDF（图片版）',
+    'PDF（文字版）',
+    '图片',
+    'JSON',
+  ]) {
     assert(menuText.includes(label), `download menu missing ${label}`);
   }
 
@@ -179,6 +186,17 @@ try {
   );
   assert(exported.png.readUInt32BE(16) === 1588, 'PNG should use the 2x A4 preview width');
 
+  await page.evaluate(() => {
+    window.__printed = false;
+    window.print = () => {
+      window.__printed = true;
+    };
+  });
+  await page.click('#download-btn');
+  await page.click('[data-export="pdf-text"]');
+  await page.waitForTimeout(200);
+  assert(await page.evaluate(() => window.__printed === true), 'text PDF should invoke print');
+
   await page.click('#lang-toggle');
   const englishText = await preview.innerText();
   assert(englishText.includes('ZHIYAO CHEN'), 'English demo identity missing');
@@ -189,7 +207,7 @@ try {
     'English demo should fit one A4 page',
   );
   assert(pageErrors.length === 0, `page errors: ${pageErrors.join('; ')}`);
-  console.log('PASS: library preview/edit, titles, photo, and all five export formats');
+  console.log('PASS: library preview/edit, titles, photo, five downloads and text PDF');
 } finally {
   if (browser) await browser.close();
   server.kill();

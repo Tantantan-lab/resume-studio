@@ -99,5 +99,6 @@ The image-based exports guarantee visual parity but are not text-editable. The e
 
 - Browser print is still available for Ctrl/Cmd+P, but PDF downloads no longer use it.
 - Image-based Word/PDF pages are sliced at A4 height; very long resumes may split mid-block.
+- Text-layer PDF uses the browser print dialog; headers/footers depend on print settings.
 - `localStorage` is ~5 MB and photos are copied into each library entry.
 - No account/cloud sync; JSON is the backup format.

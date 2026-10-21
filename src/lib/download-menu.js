@@ -1,10 +1,11 @@
-import { exportJson, exportDocx, exportDocxImage, exportPdfImage } from '../io.js';
+import { exportJson, exportDocx, exportDocxImage, exportPdfImage, exportPrint } from '../io.js';
 import { exportFilename } from './resume-utils.js';
 import { downloadBlob } from './download.js';
 import { canvasBlob, renderPreviewCanvas, renderPreviewPages } from './visual-export.js';
 import { $ } from './util.js';
 import { notify } from './ui.js';
 import { viewState } from './store.js';
+import { syncPrintRoot } from './preview.js';
 
 export function initDownloadMenu() {
   const downloadBtn = $('#download-btn'),
@@ -54,6 +55,10 @@ export function initDownloadMenu() {
               const pages = await renderPreviewPages();
               await exportPdfImage(viewState(), pages);
               notify('PDF 已生成（与预览一致）。');
+            } else if (type === 'pdf-text') {
+              syncPrintRoot();
+              notify('请在打印窗口选择“另存为 PDF”；文字可复制、搜索。');
+              exportPrint();
             } else if (type === 'png') {
               notify('正在生成图片…');
               await exportPng();
