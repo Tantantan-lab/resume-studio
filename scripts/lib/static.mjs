@@ -22,21 +22,35 @@ function inside(root, file) {
 }
 
 function send(req, res, file) {
-  fs.stat(file, (err, stat) => {
-    if (err || !stat.isFile()) {
-      notFound(res);
-      return;
-    }
-    res.writeHead(200, {
-      'Content-Type': TYPES[path.extname(file).toLowerCase()] || 'application/octet-stream',
-      'Cache-Control': 'no-store',
+  try {
+    fs.stat(file, (err, stat) => {
+      if (err || !stat.isFile()) {
+        notFound(res);
+        return;
+      }
+      res.writeHead(200, {
+        'Content-Type': TYPES[path.extname(file).toLowerCase()] || 'application/octet-stream',
+        'Cache-Control': 'no-store',
+      });
+      if (req.method === 'HEAD') {
+        res.end();
+        return;
+      }
+      const stream = fs.createReadStream(file);
+      stream.on('error', () => {
+        if (!res.headersSent) {
+          res.writeHead(500, { 'Content-Type': 'text/plain; charset=utf-8' });
+          res.end('Read error');
+        } else {
+          res.destroy();
+        }
+      });
+      stream.pipe(res);
     });
-    if (req.method === 'HEAD') {
-      res.end();
-      return;
-    }
-    fs.createReadStream(file).pipe(res);
-  });
+  } catch {
+    res.writeHead(400, { 'Content-Type': 'text/plain; charset=utf-8' });
+    res.end('Bad request');
+  }
 }
 
 function notFound(res) {
@@ -49,6 +63,11 @@ function notFound(res) {
 export function serveStatic(root, req, res, pathname) {
   let pathName = pathname;
   if (pathName.endsWith('/')) pathName += 'index.html';
+  if (pathName.includes('\0')) {
+    res.writeHead(400, { 'Content-Type': 'text/plain; charset=utf-8' });
+    res.end('Bad request');
+    return;
+  }
   const file = path.resolve(root, '.' + pathName);
   if (!inside(root, file)) {
     res.writeHead(403, { 'Content-Type': 'text/plain; charset=utf-8' });

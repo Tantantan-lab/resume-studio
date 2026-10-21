@@ -114,7 +114,7 @@ export function renderEditor() {
           return `<div class="entry">${b}</div>`;
         })
         .join('') +
-      `<button class="add-entry" id="add-entry">＋ 添加${title.includes('教育') ? '教育经历' : title.includes('实习') ? '实习经历' : store.section === 'skills' ? '技能' : '项目'}</button>`;
+      `<button class="add-entry" id="add-entry">＋ 添加${store.section === 'education' ? '教育经历' : store.section === 'experience' ? '工作经历' : store.section === 'skills' ? '技能' : '项目'}</button>`;
   } else if (store.section === 'style') body = renderStyle();
   else
     body =

@@ -65,6 +65,12 @@ try {
     'demo library should seed 6 resumes',
   );
 
+  await page.click('[data-section="experience"]');
+  await page.waitForTimeout(200);
+  assert(
+    (await page.locator('#add-entry').innerText()).includes('工作经历'),
+    'experience add-entry label should be 工作经历',
+  );
   await page.click('[data-section="library"]');
   await page.waitForTimeout(300);
   assert((await page.locator('.resume-card').count()) === 6, 'resume library cards missing');
