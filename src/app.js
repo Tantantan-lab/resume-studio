@@ -1,4 +1,3 @@
-import { terminology } from './terms.js';
 import { exportJson, exportDocx, exportDocxImage, exportPdfImage, importFile } from './io.js';
 import { autoResumeName, resumeName, fileBase } from './lib/resume-utils.js';
 import { downloadBlob } from './lib/download.js';
@@ -20,6 +19,10 @@ import {
   ACTIVE_KEY,
 } from './lib/store.js';
 import { runEarlyMigrations, runLateMigrations } from './lib/migrations.js';
+import { renderPreview, syncPrintRoot } from './lib/preview.js';
+import { renderPhotoEditor, bindPhotoEditor, initPhotoUpload } from './lib/photo.js';
+import { renderTerms } from './lib/terms-view.js';
+import { renderers } from './lib/renderers.js';
 loadPersistedState();
 runEarlyMigrations();
 loadLibrary();
@@ -348,69 +351,6 @@ function renderEditor() {
     $('#terms-search').oninput = (e) => renderTerms(e.target.value);
   }
 }
-function renderPhotoEditor() {
-  const b = current().basics;
-  return `<div class="photo-editor"><div class="photo-thumbnail">${b.photo ? `<img src="${esc(b.photo)}" alt="当前简历照片">` : `${icon('user')}<span>简历照片</span>`}</div><div class="photo-actions"><strong>简历照片</strong><p>JPG、PNG 或 WebP，自动裁切为 4:5。</p><button class="btn" id="upload-photo">${b.photo ? '替换照片' : '上传照片'}</button>${b.photo ? `<button class="btn quiet" id="remove-photo">移除</button><label class="photo-crop-label">裁切位置 <select id="photo-position"><option value="center" ${b.photoPosition === 'center' ? 'selected' : ''}>居中</option><option value="top" ${b.photoPosition === 'top' ? 'selected' : ''}>靠上</option><option value="bottom" ${b.photoPosition === 'bottom' ? 'selected' : ''}>靠下</option></select></label>` : ''}</div></div>`;
-}
-function bindPhotoEditor() {
-  $('#upload-photo').onclick = () => $('#photo-file').click();
-  if ($('#remove-photo'))
-    $('#remove-photo').onclick = () => {
-      current().basics.photo = '';
-      current().basics.photoOriginal = '';
-      syncPhotoToLibrary();
-      save();
-      renderEditor();
-      renderPreview();
-    };
-  if ($('#photo-position'))
-    $('#photo-position').onchange = async (e) => {
-      current().basics.photoPosition = e.target.value;
-      await cropPhoto();
-      syncPhotoToLibrary();
-      save();
-      renderEditor();
-      renderPreview();
-    };
-}
-async function loadImage(src) {
-  return new Promise((res, rej) => {
-    const im = new Image();
-    im.onload = () => res(im);
-    im.onerror = () => rej(new Error('无法解码图片，请使用 JPG、PNG 或 WebP。'));
-    im.src = src;
-  });
-}
-async function cropPhoto() {
-  const b = current().basics;
-  if (!b.photoOriginal && !b.photo) return;
-  const im = await loadImage(b.photoOriginal || b.photo);
-  const ratio = 4 / 5;
-  let sw = im.width,
-    sh = im.height,
-    sx = 0,
-    sy = 0;
-  if (im.width / im.height > ratio) {
-    sw = im.height * ratio;
-    sx = (im.width - sw) / 2;
-  } else {
-    sh = im.width / ratio;
-    sy =
-      b.photoPosition === 'top'
-        ? 0
-        : b.photoPosition === 'bottom'
-          ? im.height - sh
-          : (im.height - sh) / 2;
-  }
-  const c = document.createElement('canvas');
-  c.width = 360;
-  c.height = 450;
-  const ctx = c.getContext('2d');
-  ctx.fillStyle = '#fff';
-  ctx.fillRect(0, 0, c.width, c.height);
-  ctx.drawImage(im, sx, sy, sw, sh, 0, 0, c.width, c.height);
-  b.photo = c.toDataURL('image/jpeg', 0.9);
-}
 function renderStyle() {
   return `<div class="form-grid"><label class="field"><span>中文字体</span><select data-font="fontCN">${['Arial Unicode MS', 'Microsoft YaHei', 'SimSun', 'PingFang SC', 'Noto Sans CJK SC'].map((x) => `<option ${store.state.style.fontCN === x ? 'selected' : ''}>${x}</option>`).join('')}</select></label><label class="field"><span>英文字体</span><select data-font="fontEN">${['Arial', 'Calibri', 'Times New Roman', 'Georgia', 'Helvetica'].map((x) => `<option ${store.state.style.fontEN === x ? 'selected' : ''}>${x}</option>`).join('')}</select></label></div>${[
     ['bodySize', '正文字号', 9, 12, 0.5, 'pt'],
@@ -457,102 +397,6 @@ function bindStyle() {
     renderPreview();
   };
   $('#font-import').onclick = () => $('#font-file').click();
-}
-function date(x) {
-  return x ? x.replace('-', '.') : '';
-}
-function range(a, b) {
-  return a || b ? `${date(a)}${a && b ? ' - ' : ''}${date(b)}` : '';
-}
-function lines(items) {
-  return `<ul>${(items || [])
-    .filter(Boolean)
-    .map((x) => `<li>${esc(x)}</li>`)
-    .join('')}</ul>`;
-}
-function renderPreview() {
-  const vs = viewState(),
-    p = vs.profiles[vs.language],
-    en = vs.language === 'en';
-  const targetLine = [
-    p.basics.target ? esc(p.basics.target) : '',
-    p.basics.salary ? `${en ? 'Expected Salary: ' : '期望薪资：'}${esc(p.basics.salary)}` : '',
-  ]
-    .filter(Boolean)
-    .join(' &nbsp;|&nbsp; ');
-  let html = `<header class="resume-header ${p.basics.photo ? 'has-photo' : ''}">${p.basics.photo ? '<div></div>' : ''}<div class="resume-identity"><h1>${esc(p.basics.name || (en ? 'YOUR NAME' : '姓名待补充'))}</h1><p class="contacts">${[p.basics.phone || (en ? 'Phone to be added' : '手机待补充'), p.basics.email || (en ? 'Email to be added' : '邮箱待补充'), p.basics.links].filter(Boolean).map(esc).join(' &nbsp;|&nbsp; ')}</p><p class="target">${targetLine}</p></div>${p.basics.photo ? `<img class="resume-photo" src="${esc(p.basics.photo)}" alt="简历照片">` : ''}</header>`;
-  if (p.education.length)
-    html += `<section><h2>${en ? 'Education' : '教育背景'}</h2>${p.education.map((x) => `<div class="item"><div class="resume-row"><strong>${esc(x.school)}</strong><span class="date">${range(x.start, x.end)}</span></div><p class="qual">${[x.major, x.degree, x.gpa ? 'GPA ' + x.gpa : '', x.rank].filter(Boolean).map(esc).join(' &nbsp;|&nbsp; ')}</p>${x.courses ? `<p>${en ? 'Coursework: ' : '主修课程：'}${esc(x.courses)}</p>` : ''}</div>`).join('')}</section>`;
-  if (p.experience.length)
-    html += `<section><h2>${en ? 'Experience' : '工作经历'}</h2>${p.experience.map((x) => `<div class="item"><div class="resume-row"><strong>${esc(x.company)}${x.role ? ' | ' + esc(x.role) : ''}</strong><span class="date">${range(x.start, x.end)}</span></div>${lines(x.bullets)}</div>`).join('')}</section>`;
-  if (p.projects.length)
-    html += `<section><h2>${en ? 'Projects' : '项目经历'}</h2>${p.projects.map((x) => `<div class="item"><div class="resume-row"><strong>${esc(x.title)}${x.award && !en ? ' | ' + esc(x.award) : ''}</strong><span class="date">${range(x.start, x.end)}</span></div>${x.award && en ? `<p class="award">${esc(x.award)}</p>` : ''}${lines(x.bullets)}</div>`).join('')}</section>`;
-  if (p.skills.length)
-    html += `<section><h2>${en ? 'Skills' : '专业技能'}</h2>${p.skills.map((x) => `<p class="skill"><strong>${esc(x.label)}${en ? ': ' : '：'}</strong>${esc(x.text)}</p>`).join('')}</section>`;
-  const preview = $('#resume-preview');
-  preview.innerHTML = html;
-  const safeFamily = (x) => String(x).replace(/["'<>;\\]/g, '');
-  preview.style.fontFamily = `"${safeFamily(vs.style.fontEN)}","${safeFamily(vs.style.fontCN)}",sans-serif`;
-  preview.style.fontSize = vs.style.bodySize + 'pt';
-  preview.style.lineHeight = vs.style.lineHeight;
-  preview.style.padding = vs.style.marginMm + 'mm';
-  preview.style.color = vs.style.accent || '#111111';
-  preview.querySelector('h1').style.fontSize = vs.style.titleSize + 'pt';
-  preview.style.transform = `scale(${store.scale})`;
-  preview.style.transformOrigin = 'top left';
-  requestAnimationFrame(() => {
-    const w = preview.offsetWidth,
-      h = preview.offsetHeight;
-    $('#sheet-wrap').style.width = w * store.scale + 'px';
-    $('#sheet-wrap').style.height = h * store.scale + 'px';
-    const pages = Math.max(1, Math.ceil(h / 1122.6 - 0.015));
-    $('#page-status').textContent = pages === 1 ? '一页预览' : `约 ${pages} 页`;
-    $('#zoom-label').textContent = Math.round(store.scale * 100) + '%';
-  });
-  $('#font-summary').textContent = `${vs.style.bodySize}pt · ${vs.style.fontEN}`;
-  const langToggle = $('#lang-toggle');
-  if (langToggle) {
-    langToggle.dataset.activeLang = en ? 'en' : 'zh';
-    langToggle.setAttribute('aria-pressed', String(en));
-    langToggle.title = en
-      ? '切换到中文简历 / Switch to Chinese'
-      : '切换英文简历 / Switch to English';
-  }
-  const langSwitch = document.querySelector('.language-switch');
-  if (langSwitch) langSwitch.style.display = store.section === 'library' ? 'none' : '';
-  const titleInput = $('#document-title');
-  titleInput.value = vs.meta?.title || '';
-  titleInput.disabled = store.section === 'library';
-  document.title = vs.meta?.title || '简历工坊 · Resume Studio';
-  const paper = preview.cloneNode(true);
-  paper.removeAttribute('id');
-  paper.style.transform = 'none';
-  $('#print-root').replaceChildren(paper);
-}
-function renderTerms(q) {
-  const rows = terminology.filter((t) =>
-    [t.cn, t.en, t.category].join(' ').toLowerCase().includes(q.toLowerCase()),
-  );
-  $('#term-list').innerHTML =
-    rows
-      .map(
-        (t) =>
-          `<div class="term"><div class="term-head"><strong>${esc(t.cn)}</strong><span class="badge ${t.evidence === 'supported' ? '' : 'pending'}">${t.evidence === 'supported' ? '有经历依据' : '待补充依据'}</span></div><div class="term-en">${esc(t.en)}</div><p>${esc(t.definition)}</p><p>${esc(t.resumeEvidence)}</p><div class="term-actions"><a href="${esc(t.sourceUrl)}" target="_blank" rel="noopener noreferrer">BOSS 公开摘录 ↗</a><button data-copy="${esc(store.state.language === 'en' ? t.en : t.cn)}">复制词汇</button></div></div>`,
-      )
-      .join('') || '<p>没有匹配的词汇。</p>';
-  $('#term-list')
-    .querySelectorAll('[data-copy]')
-    .forEach(
-      (e) =>
-        (e.onclick = async () => {
-          try {
-            await navigator.clipboard.writeText(e.dataset.copy);
-            notify('已复制，请结合真实经历使用。');
-          } catch {
-            notify('当前浏览器不允许复制，请手动选取词汇。');
-          }
-        }),
-    );
 }
 function renderVersions() {
   openModal(
@@ -753,13 +597,11 @@ $('#font-file').onchange = async (e) => {
 $('#modal').addEventListener('click', (e) => {
   if (e.target === $('#modal')) $('#modal').close();
 });
-window.addEventListener('beforeprint', () => {
-  const paper = $('#resume-preview').cloneNode(true);
-  paper.removeAttribute('id');
-  paper.style.transform = 'none';
-  $('#print-root').replaceChildren(paper);
-});
+window.addEventListener('beforeprint', syncPrintRoot);
 window.addEventListener('resize', () => renderPreview());
+renderers.renderEditor = renderEditor;
+renderers.renderLibrary = renderLibrary;
+initPhotoUpload();
 renderEditor();
 renderPreview();
 setTimeout(() => {
@@ -769,36 +611,3 @@ setTimeout(() => {
 window.addEventListener('resume-io-warning', (e) =>
   notify(e.detail?.message || '导出时有内容需检查。'),
 );
-$('#photo-file').onchange = async (e) => {
-  const f = e.target.files[0];
-  if (!f) return;
-  let url;
-  try {
-    if (!['image/jpeg', 'image/png', 'image/webp'].includes(f.type))
-      throw new Error('请使用 JPG、PNG 或 WebP。');
-    if (f.size > 10 * 1024 * 1024) throw new Error('照片请小于 10 MB。');
-    url = URL.createObjectURL(f);
-    const im = await loadImage(url);
-    const c = document.createElement('canvas'),
-      ratio = Math.min(1, 1000 / Math.max(im.width, im.height));
-    c.width = Math.round(im.width * ratio);
-    c.height = Math.round(im.height * ratio);
-    const ctx = c.getContext('2d');
-    ctx.fillStyle = '#fff';
-    ctx.fillRect(0, 0, c.width, c.height);
-    ctx.drawImage(im, 0, 0, c.width, c.height);
-    current().basics.photoOriginal = c.toDataURL('image/jpeg', 0.85);
-    current().basics.photoPosition = 'center';
-    await cropPhoto();
-    syncPhotoToLibrary();
-    save();
-    renderEditor();
-    renderPreview();
-    notify('照片已同步到所有简历。');
-  } catch (err) {
-    notify(err.message);
-  } finally {
-    if (url) URL.revokeObjectURL(url);
-    e.target.value = '';
-  }
-};
