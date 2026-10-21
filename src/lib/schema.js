@@ -309,7 +309,7 @@ export function normalizeState(input, warnings = []) {
   return result;
 }
 
-export { clean, photoInfo };
+export { clean, photoInfo, normalizeProfile };
 
 export const EMPTY_ENTRIES = {
   education: {

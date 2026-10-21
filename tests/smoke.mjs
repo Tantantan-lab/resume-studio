@@ -206,6 +206,25 @@ try {
     await preview.evaluate((el) => el.scrollHeight <= 1123),
     'English demo should fit one A4 page',
   );
+
+  const roundtrip = path.join(downloadDir, 'roundtrip.docx');
+  fs.writeFileSync(roundtrip, exported.word);
+  await page.setInputFiles('#import-file', roundtrip);
+  await page.waitForTimeout(700);
+  assert(
+    await page.locator('#modal').evaluate((el) => el.open),
+    'DOCX import review modal missing',
+  );
+  await page.click('#confirm-import');
+  await page.waitForTimeout(700);
+  assert(
+    (await page.locator('#toast').innerText()).includes('已导入'),
+    'DOCX import did not finish',
+  );
+  assert(
+    (await page.locator('.editor-heading h2').innerText()) === '项目经历',
+    'DOCX import should land on the imported section',
+  );
   assert(pageErrors.length === 0, `page errors: ${pageErrors.join('; ')}`);
   console.log('PASS: library preview/edit, titles, photo, five downloads and text PDF');
 } finally {

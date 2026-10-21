@@ -31,7 +31,7 @@ This repository is a local-first, static resume editor. Read this before changin
 
 1. Read `docs/ARCHITECTURE.md` and the relevant section of `src/app.js`.
 2. Make the smallest change that preserves the invariants above.
-3. Run `npm run check`.
+3. Run `npm run check` and `npm run lint`.
 4. Run `npm run build`.
 5. Run `npm test` (uses local Chrome; set `CHROME_PATH` if needed).
 6. Manually verify: Chinese one page, library preview → 修改, title, download menu.

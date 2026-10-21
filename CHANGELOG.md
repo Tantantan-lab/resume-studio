@@ -48,6 +48,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Text-layer PDF export via browser print (searchable/copyable), alongside the visual PDF
 
+### Added
+
+- ESLint with browser/Node globals; caught a missing `normalizeProfile` import in DOCX import
+- DOCX export→import round-trip coverage in the browser smoke test
+
 ### Changed
 
 - Demo fixtures moved to `src/demo/` (data, roles, avatar)

@@ -1,5 +1,5 @@
 import { store } from './store.js';
-import { esc } from './util.js';
+import { $, esc } from './util.js';
 import { notify } from './ui.js';
 import { terminology } from '../terms.js';
 

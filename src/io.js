@@ -8,7 +8,7 @@
  * lossless, bilingual editable format. DOCX contains the current language;
  * DOCX import provides a best-effort draft and the complete extracted text.
  */
-import { clean, normalizeState, photoInfo } from './lib/schema.js';
+import { clean, normalizeState, photoInfo, normalizeProfile } from './lib/schema.js';
 import { exportFilename } from './lib/resume-utils.js';
 import { downloadBlob } from './lib/download.js';
 export { normalizeState };

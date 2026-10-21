@@ -55,6 +55,7 @@ npm run preview
 ```bash
 npm run check          # 检查源码、脚本和测试的 JS 语法
 npm run format:check   # 检查统一代码格式
+npm run lint           # ESLint
 npm run format         # 格式化自有代码，排除 vendor、private 和 dist
 npm run test:unit      # 本地服务与演示头像回归检查
 npm run verify         # 格式、语法、单元检查及浏览器导出测试
