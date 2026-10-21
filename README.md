@@ -82,6 +82,8 @@ npm test               # 构建 + Playwright 冒烟测试（使用本机 Chrome�
 │   ├── serve.mjs        # 预览/测试用静态服务器（dist）
 │   ├── agent.mjs        # 本地 Agent CLI（导出/提示词/校验/应用）
 │   └── agent-server.mjs # 可选的本地 Agent HTTP API
+├── templates/           # 岗位模板（MCP list_templates/get_template）
+├── .mcp.json            # Claude Code 项目级 MCP 配置
 ├── tests/smoke.mjs      # Playwright 冒烟测试
 ├── docs/                # 架构、数据模型、提示词、部署、隐私
 ├── private/             # 个人简历 JSON / 研究数据（已 gitignore，不提交）
@@ -120,6 +122,20 @@ curl -X POST http://127.0.0.1:4178/api/resume \
 ```
 
 详细规则见 [AGENTS.md](AGENTS.md)、[docs/PROMPTS.md](docs/PROMPTS.md)、[docs/AGENT_API.md](docs/AGENT_API.md)。示例聊天见 [examples/chat.md](examples/chat.md)。
+
+## MCP Server：AI 自动发现工具
+
+仓库包含本地 stdio MCP Server（`.mcp.json` + `scripts/mcp-server.mjs`）。Claude Code 打开项目后会自动发现；Codex 可通过 MCP 配置或 `codex mcp add` 接入。
+
+工具：`list_templates`、`get_template`、`create_resume`、`update_resume`、`list_resumes`、`get_resume`、`get_instructions`。
+
+模板在 `templates/`：市场营销 / 产品运营、跨境电商运营、内容运营、产品运营、英文海外市场营销。AI 选模板后用聊天记录里的真实事实写 JSON，`create_resume` 输出可导入文件。
+
+```bash
+npm run mcp   # stdio server；通常由 MCP 客户端拉起
+```
+
+详细配置和流程见 [docs/MCP.md](docs/MCP.md)。
 
 ## 演示数据
 
@@ -164,6 +180,7 @@ git push -u origin main
 - [数据模型](docs/DATA_MODEL.md)
 - [修改指南（人 + 提示词）](docs/PROMPTS.md)
 - [本地 Agent API / CLI](docs/AGENT_API.md)
+- [MCP Server](docs/MCP.md)
 - [自定义](docs/CUSTOMIZE.md)
 - [部署](docs/DEPLOY.md)
 - [隐私](docs/PRIVACY.md)

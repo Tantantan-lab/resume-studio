@@ -1,0 +1,18 @@
+{
+  "id": "product-operations",
+  "name": "产品运营 / 产品助理",
+  "language": "zh",
+  "region": "深圳",
+  "salary": "6–8K",
+  "target": {
+    "zh": "产品运营 / 产品助理",
+    "en": "Product Operations / Product Assistant"
+  },
+  "description": "适合产品运营、产品助理、用户研究方向。",
+  "guidance": [
+    "突出用户调研、需求整理、竞品分析、产品文档、跨部门协作和数据复盘。",
+    "不要把运营动作写成产品决策；区分参与、协助和独立负责。",
+    "没有 SQL/Python 就不要写数据分析工具。"
+  ],
+  "doNotClaim": ["独立负责产品", "SQL", "Python", "用户增长"]
+}

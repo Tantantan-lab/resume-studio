@@ -9,6 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Local stdio MCP server with templates and tools: list/create/update/list/get resume + instructions
+
 - Vite production build with hashed JS/CSS assets and relative base for GitHub Pages
 - Text-layer PDF export via browser print (searchable/copyable), alongside the visual PDF
 - ESLint with browser/Node globals; DOCX export→import round-trip coverage

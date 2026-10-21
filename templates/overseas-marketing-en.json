@@ -1,0 +1,18 @@
+{
+  "id": "overseas-marketing-en",
+  "name": "Overseas Marketing (English)",
+  "language": "en",
+  "region": "Shenzhen",
+  "salary": "8–10K",
+  "target": {
+    "zh": "海外市场营销",
+    "en": "Overseas Marketing / Content Marketing"
+  },
+  "description": "English-first template for overseas marketing and content roles.",
+  "guidance": [
+    "Use the same facts as the Chinese profile; do not translate claims you cannot support.",
+    "Highlight market research, competitor analysis, KOL/events, content assets and English communication.",
+    "Keep dates and job titles identical to the Chinese profile."
+  ],
+  "doNotClaim": ["paid media", "SEO/SEM", "ACoS", "FBA", "account growth", "sales quotas"]
+}

@@ -12,17 +12,20 @@
     "test": "npm run build && node tests/smoke.mjs",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
-    "test:unit": "node --test tests/server.test.mjs tests/demo-photo.test.mjs tests/demo-content.test.mjs",
+    "test:unit": "node --test tests/server.test.mjs tests/demo-photo.test.mjs tests/demo-content.test.mjs tests/mcp.test.mjs",
     "verify": "npm run format:check && npm run check && npm run lint && npm run test:unit && npm test",
-    "lint": "eslint ."
+    "lint": "eslint .",
+    "mcp": "node scripts/mcp-server.mjs"
   },
   "devDependencies": {
     "@eslint/js": "^9.39.5",
+    "@modelcontextprotocol/sdk": "^1.32.1",
     "eslint": "^9.39.4",
     "globals": "^17.13.0",
     "playwright-core": "^1.64.1",
     "prettier": "3.9.10",
-    "vite": "^8.3.4"
+    "vite": "^8.3.4",
+    "zod": "^4.6.7"
   },
   "engines": {
     "node": "^20.19.0 || >=22.12.0"

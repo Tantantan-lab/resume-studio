@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "resume-studio": {
+      "command": "node",
+      "args": ["scripts/mcp-server.mjs"]
+    }
+  }
+}
