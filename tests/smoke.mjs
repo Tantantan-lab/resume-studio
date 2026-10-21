@@ -4,6 +4,7 @@ import os from 'node:os';
 import path from 'node:path';
 import { chromium } from 'playwright-core';
 import { defaultState } from '../src/demo/data.js';
+import { runPaperDesignTests } from './paper-design.test.mjs';
 
 const PORT = 4177;
 const chromeCandidates = [
@@ -43,6 +44,34 @@ try {
   await page.goto(`http://127.0.0.1:${PORT}/`, { waitUntil: 'networkidle' });
   await page.waitForTimeout(700);
 
+  assert(
+    (await page.locator('html').getAttribute('lang')) === 'zh-CN',
+    'showcase UI should default to Chinese',
+  );
+  assert(
+    (await page.locator('#resume-preview').innerText()).includes('陈知遥'),
+    'showcase resume should default to Chinese',
+  );
+  await page.click('#ui-language-btn');
+  await page.waitForTimeout(100);
+  assert(
+    (await page.locator('#lang-toggle').getAttribute('data-active-lang')) === 'en',
+    'switching UI to English should also switch the resume to English',
+  );
+  assert(
+    (await page.locator('#resume-preview').innerText()).includes('Emily Carter'),
+    'preview should show the English resume after the UI switch',
+  );
+  await page.click('#ui-language-btn');
+  await page.waitForTimeout(100);
+  assert(
+    (await page.locator('#lang-toggle').getAttribute('data-active-lang')) === 'zh',
+    'switching UI to Chinese should also switch the resume to Chinese',
+  );
+  assert(
+    (await page.locator('#resume-preview').innerText()).includes('陈知遥'),
+    'preview should show the Chinese resume after the UI switch',
+  );
   const title = await page.title();
   const distHtml = fs.readFileSync('dist/index.html', 'utf8');
   const assetRefs = [...distHtml.matchAll(/(?:src|href)="([^"]+)"/g)]
@@ -58,7 +87,7 @@ try {
     'dist index should load the vendor classic script',
   );
   assert(
-    title.includes('市场营销') || title.includes('简历工坊'),
+    title.includes('演示') || title.includes('Marketing'),
     `unexpected page title: ${title}`,
   );
   assert(
@@ -72,6 +101,22 @@ try {
     (await page.locator('#add-entry').innerText()).includes('工作经历'),
     'experience add-entry label should be 工作经历',
   );
+  for (const [section, next] of [
+    ['basics', 'education'],
+    ['education', 'experience'],
+    ['experience', 'projects'],
+    ['projects', 'skills'],
+    ['skills', 'style'],
+  ]) {
+    await page.click(`.nav-item[data-section="${section}"]`);
+    await page.waitForTimeout(60);
+    const nextBtn = page.locator('.editor-footer [data-next]');
+    assert((await nextBtn.count()) === 1, `${section} should show one next button`);
+    assert(
+      (await nextBtn.getAttribute('data-next')) === next,
+      `${section} next should point to ${next}`,
+    );
+  }
   await page.click('[data-section="library"]');
   await page.waitForTimeout(300);
   assert((await page.locator('.resume-card').count()) === 6, 'resume library cards missing');
@@ -85,7 +130,9 @@ try {
     'language switch should be hidden while previewing',
   );
 
-  const cross = page.locator('.resume-card', { hasText: '跨境电商运营 8–10K 杭州' });
+  const cross = page.locator('.resume-card', {
+    hasText: '跨境电商运营 · 演示',
+  });
   await cross.locator('.resume-card-open').click();
   await page.waitForTimeout(300);
   assert(
@@ -99,6 +146,8 @@ try {
 
   await cross.locator('[data-edit]').click();
   await page.waitForTimeout(300);
+  if ((await page.locator('#lang-toggle').getAttribute('data-active-lang')) !== 'zh')
+    await page.click('#lang-toggle');
   assert(
     (await page.locator('[data-path="basics.target"]').inputValue()) === '跨境电商运营',
     '修改 should enter the editor',
@@ -110,9 +159,9 @@ try {
 
   const preview = page.locator('#resume-preview');
   const previewText = await preview.innerText();
-  for (const text of ['陈知遥', '虚构演示', '森语集', '知野', '校园闲置交换小站'])
-    assert(previewText.includes(text), `new fictional demo missing ${text}`);
-  for (const text of ['Ozon', 'APEC', '农资', '雅思', '数字贸易'])
+  for (const text of ['陈知遥', '虚构演示', '森语集数字零售', '知野内容工作室', '校园闲置交换小站'])
+    assert(previewText.includes(text), `Chinese fictional demo missing ${text}`);
+  for (const text of ['艾米莉·卡特', '柳叶', '北线', '布里斯托', 'Ozon', 'APEC', '农资', '雅思', '数字贸易'])
     assert(!previewText.includes(text), `old content remains: ${text}`);
   assert(
     await preview.evaluate((el) => el.scrollHeight <= 1123),
@@ -150,7 +199,10 @@ try {
     await page.click(`[data-export="${type}"]`);
     const download = await pendingDownload;
     const filename = download.suggestedFilename();
-    assert(filename.includes('跨境电商运营'), `${type} should use the selected resume title`);
+    assert(
+      filename.includes('跨境电商运营'),
+      `${type} should use the selected resume title`,
+    );
     const destination = path.join(downloadDir, filename);
     await download.saveAs(destination);
     assert((await download.failure()) === null, `${type} download failed`);
@@ -230,9 +282,9 @@ try {
 
   await page.click('#lang-toggle');
   const englishText = await preview.innerText();
-  assert(englishText.includes('ZHIYAO CHEN'), 'English demo identity missing');
+  assert(englishText.includes('Emily Carter'), 'English demo identity missing');
   assert(englishText.includes('Fictional demo'), 'English fiction label missing');
-  assert(englishText.includes('Senyu Digital Retail'), 'English demo experience missing');
+  assert(englishText.includes('Willow Digital Retail'), 'English demo experience missing');
   assert(
     await preview.evaluate((el) => el.scrollHeight <= 1123),
     'English demo should fit one A4 page',
@@ -296,6 +348,7 @@ try {
   // Imported dates must be rendered as text, never as HTML.
   const xssState = structuredClone(defaultState);
   xssState.meta.title = 'XSS 测试';
+  xssState.language = 'zh';
   xssState.profiles.zh.education[0].start =
     '<img src=x onerror="window.__xss=(window.__xss||0)+1">';
   const xssPath = path.join(downloadDir, 'xss-resume.json');
@@ -322,6 +375,7 @@ try {
   await upgradePage.evaluate((photo) => {
     const key = 'resume-studio.v1';
     const state = JSON.parse(localStorage.getItem(key));
+    state.language = 'zh';
     state.profiles.zh.basics.name = '张三';
     state.profiles.en.basics.name = 'ZHANG SAN';
     state.profiles.zh.basics.photo = photo;
@@ -343,6 +397,8 @@ try {
     'personal photo must not be replaced by the demo avatar',
   );
   await upgradeContext.close();
+
+  await runPaperDesignTests(browser, `http://127.0.0.1:${PORT}/`, downloadDir);
 
   assert(pageErrors.length === 0, `page errors: ${pageErrors.join('; ')}`);
   console.log('PASS: library preview/edit, titles, photo, five downloads and text PDF');

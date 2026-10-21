@@ -64,6 +64,12 @@ On edit:
 | `src/lib/resume-utils.js`  | resume names, file names, legacy titles                   |
 | `src/lib/renderers.js`     | editor/library registry avoiding import cycles            |
 
+## Paper design and interface
+
+`paper-design.js` defines four presentation presets. `page-fill.js` measures the natural content height and binary-searches a bounded vertical gap when the content fits A4; oversized content retains its original spacing. Runtime gap variables live on `.resume`, so visual export and print clones retain them. The stored setting is only `fillPage`, and each language is measured independently.
+
+`i18n.js` localizes interface text and attributes with reversible source maps and a DOM observer. It excludes resume/print content, input values, filenames and version names. `initInterfaceLanguage()` runs after the first render; the default interface language is English. No translation API is used to switch profiles.
+
 ## Preview and exports
 
 `viewState()` returns the selected library entry while browsing the library, otherwise the active state. `renderPreview()` is the single renderer.

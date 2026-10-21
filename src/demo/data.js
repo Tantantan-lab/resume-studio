@@ -1,5 +1,6 @@
 import { demoPhoto } from './demo-photo.js';
 import { BASE_STYLE } from '../lib/schema.js';
+import { applyPaperTemplate } from '../lib/paper-design.js';
 
 // Entirely fictional demo persona. No content is derived from a user's resume.
 export const demoRegion = '杭州';
@@ -7,29 +8,29 @@ export const demoRoles = [
   {
     zh: '市场营销 / 产品运营',
     en: 'Marketing / Product Operations',
-    salary: '8–10K',
+    salary: 'Negotiable',
   },
   {
     zh: '跨境电商运营',
     en: 'Cross-border E-commerce Operations',
-    salary: '8–10K',
+    salary: 'Negotiable',
     order: [2, 0, 1],
   },
   {
     zh: '内容运营 / 内容营销',
     en: 'Content Operations / Content Marketing',
-    salary: '8–10K',
+    salary: 'Negotiable',
     order: [1, 0, 2],
   },
   {
     zh: '产品运营 / 产品助理',
     en: 'Product Operations / Product Assistant',
-    salary: '8–10K',
+    salary: 'Negotiable',
   },
   {
     zh: '市场营销',
     en: 'Marketing',
-    salary: '6–8K',
+    salary: 'Negotiable',
   },
 ];
 
@@ -39,7 +40,7 @@ export const defaultState = {
   meta: {
     title: '市场营销 / 产品运营 8–10K 杭州',
   },
-  style: { ...BASE_STYLE, bodySize: 10, lineHeight: 1.25 },
+  style: { ...applyPaperTemplate(BASE_STYLE, 'minimal'), fillPage: true },
   profiles: {
     zh: {
       basics: {
@@ -136,12 +137,12 @@ export const defaultState = {
     },
     en: {
       basics: {
-        name: 'ZHIYAO CHEN',
-        phone: '000-0000-0000',
-        email: 'zhiyao.chen@example.com',
+        name: 'Emily Carter',
+        phone: '+44 0000 000000',
+        email: 'emily.carter@example.com',
         target: 'Marketing / Product Operations',
         links: 'Fictional demo · All details are examples',
-        salary: '8–10K',
+        salary: 'Negotiable',
         photo: demoPhoto,
         photoOriginal: demoPhoto,
         photoPosition: 'center',
@@ -149,22 +150,22 @@ export const defaultState = {
       education: [
         {
           id: 'demo-en-edu-1',
-          school: 'Hangchuan University of Applied Studies (Fictional)',
-          degree: 'Bachelor’s Degree',
+          school: 'Westbridge College (Fictional)',
+          degree: 'BA (Hons)',
           major: 'Marketing',
           start: '2020-09',
           end: '2024-06',
           gpa: '',
           rank: '',
           courses:
-            'Consumer Behavior, Digital Marketing, Brand Management, User Research and Business Statistics.',
+            'Consumer Behaviour, Digital Marketing, Brand Management, User Research and Business Statistics.',
         },
       ],
       experience: [
         {
           id: 'demo-en-exp-1',
-          company: 'Senyu Digital Retail (Fictional)',
-          role: 'E-commerce Operations Assistant',
+          company: 'Willow Digital Retail (Fictional)',
+          role: 'Digital Retail Assistant',
           start: '2025-07',
           end: '2026-09',
           bullets: [
@@ -175,13 +176,13 @@ export const defaultState = {
         },
         {
           id: 'demo-en-exp-2',
-          company: 'Zhiye Content Studio (Fictional)',
-          role: 'Content Operations Assistant',
+          company: 'Northline Content Studio (Fictional)',
+          role: 'Content Assistant',
           start: '2024-07',
           end: '2025-06',
           bullets: [
             'Created content calendars, English short-video scripts and social posts for lifestyle brands; supported topic planning, filming and editing.',
-            'Used Jimeng for visual concepts and video clips, with ChatGPT and Canva AI for proposal assets; manually checked product facts and English copy.',
+            'Used Dreamina for visual concepts and video clips, with ChatGPT and Canva AI for proposal assets; manually checked product facts and English copy.',
             'Organized images and videos by theme, use and version, and tracked engagement to inform future topics and creative improvements.',
           ],
         },
@@ -189,12 +190,12 @@ export const defaultState = {
       projects: [
         {
           id: 'demo-en-project-1',
-          title: 'Weekend City Notes (Fictional)',
+          title: 'Bristol Weekend Notes (Fictional)',
           award: 'Personal Content Project',
           start: '2025-03',
           end: '2026-08',
           bullets: [
-            'Produced photo stories and short videos about public spaces and weekend activities in Hangzhou, including planning, filming, English summaries and asset organization.',
+            'Produced photo stories and short videos about public spaces and weekend activities in Bristol, including planning, filming, English summaries and asset organization.',
             'Maintained a consistent tracker for topics, production progress and reader feedback to refine information structure and cover design.',
           ],
         },
@@ -213,13 +214,13 @@ export const defaultState = {
       skills: [
         {
           id: 'demo-en-skill-1',
-          label: 'English',
-          text: 'Product descriptions, business emails, short-video scripts, everyday workplace communication and reference reading.',
+          label: 'Content Writing',
+          text: 'Product descriptions, business emails, short-form video scripts, social copy and editorial proofreading.',
         },
         {
           id: 'demo-en-skill-2',
           label: 'AI Content Creation',
-          text: 'Jimeng for visual concepts and video clips; ChatGPT for English copywriting assistance; Canva AI for visual content, with manual fact and language checks.',
+          text: 'Dreamina for visual concepts and video clips; ChatGPT for English copywriting assistance; Canva AI for visual content, with manual fact and language checks.',
         },
         {
           id: 'demo-en-skill-3',

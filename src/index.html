@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="zh-CN">
+<html lang="en">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -30,6 +30,14 @@
           >
         </div>
         <div class="top-actions">
+          <button
+            class="btn interface-toggle"
+            id="ui-language-btn"
+            type="button"
+            aria-label="Switch interface language"
+          >
+            中文
+          </button>
           <button class="btn quiet" id="version-btn">版本记录</button
           ><button class="btn" id="import-btn"><span data-icon="upload"></span>导入简历</button>
           <div class="download-menu">
@@ -96,7 +104,7 @@
           <div class="sidebar-label section-label">编辑工具</div>
           <nav>
             <button class="nav-item" data-section="style">
-              <span data-icon="sliders"></span><span>字体与排版</span></button
+              <span data-icon="sliders"></span><span>纸面设计</span></button
             ><button class="nav-item" data-section="terms">
               <span data-icon="book"></span><span>岗位词库</span><span class="count">18</span>
             </button>
@@ -159,7 +167,7 @@
       type="file"
       accept="image/jpeg,image/png,image/webp"
       hidden
-    /><input id="font-file" type="file" accept=".pdf" hidden />
+    />
     <div id="toast" class="toast" role="status"></div>
     <dialog id="modal"><div id="modal-body"></div></dialog>
     <script src="/vendor/docx.js"></script>

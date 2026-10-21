@@ -5,9 +5,12 @@
 ```json
 {
   "version": 1,
-  "language": "zh",
-  "meta": { "title": "市场营销 / 产品运营 8–10K 杭州" },
+  "language": "en",
+  "meta": { "title": "Marketing / Product Operations · Demo" },
   "style": {
+    "template": "minimal",
+    "showPhoto": true,
+    "fillPage": true,
     "fontCN": "Arial Unicode MS",
     "fontEN": "Arial",
     "bodySize": 10,
@@ -71,3 +74,12 @@ DOCX import is a best-effort draft; always review the extracted text. JSON is th
 ## Agent output
 
 Agents must produce a complete v1 state (not a patch). `scripts/agent.mjs apply` validates the structure, rejects or trims unsafe fields, writes a timestamped backup, and creates `private/agent/resume-import.json` for the app's 导入简历 flow.
+
+## Paper design and interface locale
+
+- `style.template`: `classic` (legacy default), `minimal`, `sidebar`, or `editorial`.
+- `style.showPhoto`: boolean, defaults to `true`; hiding never deletes either profile's image data.
+- `style.fillPage`: boolean, defaults to `false` for legacy JSON. It stores intent, not a measured pixel gap. The preview recalculates spacing for each language.
+- `style.accent` colors headings and rules; body text stays dark.
+- The dated English demo migration changes only exact known demo identities. New demos default to English, Essential and automatic spacing.
+- `resume-studio.v1.ui-language`: `en` or `zh`, independent of `state.language`; absent preference defaults to English. It is a browser UI preference, not part of resume JSON.

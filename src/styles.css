@@ -516,6 +516,9 @@ svg {
   gap: 3px;
   padding: 0;
 }
+.interface-toggle {
+  min-width: 88px;
+}
 .language-switch #lang-toggle .lang-option {
   padding: 6px 12px;
   border-radius: 3px;
@@ -533,7 +536,6 @@ svg {
   background: #fff;
   color: #ec5b4e;
   box-shadow: 0 1px 3px #00000009;
-  font-weight: 600;
 }
 .workspace {
   display: grid;
@@ -917,28 +919,6 @@ svg {
 }
 .style-control output {
   color: #999ba3;
-}
-.font-audit {
-  border: 1px solid #e6e6eb;
-  border-radius: 4px;
-  padding: 14px;
-  font-size: 11px;
-  line-height: 1.8;
-  margin-top: 23px;
-}
-.font-audit strong {
-  display: block;
-  color: #666974;
-}
-.font-audit p {
-  color: #9597a0;
-}
-.font-audit code {
-  font-size: 10px;
-  word-break: break-word;
-  background: #f5f5f7;
-  border-radius: 3px;
-  padding: 2px 4px;
 }
 .terms-search {
   width: 100%;

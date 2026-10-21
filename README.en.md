@@ -22,6 +22,10 @@ A **local-first bilingual resume editor** with an A4 live preview, a resume libr
 
 ## Features
 
+- **Bilingual showcase** — Chinese interface with the fictional Chen Zhiyao profile by default; the English interface pairs with the fictional Emily Carter profile and generated portrait. Interface and resume languages switch independently.
+- **Paper design** — Classic, Essential, Sidebar and Editorial layouts with accent colors and optional photo display.
+- **Fill one page** — Expands vertical spacing without changing font sizes; long resumes keep their normal pagination.
+
 - **Resume library** — multiple versions named by role + salary + region; click a card to preview, click 修改 to edit
 - **Chinese / English profiles** — separate content, one toggle
 - **A4 live preview** — fonts, sizes, line height and margins
@@ -125,3 +129,5 @@ Most docs are written in Chinese; code and schema names are English.
 ## License
 
 [MIT](LICENSE). Third-party notices: [ACKNOWLEDGEMENTS.md](ACKNOWLEDGEMENTS.md).
+
+See [Paper design](docs/PAPER_DESIGN.md) for template settings, automatic spacing and language behavior.

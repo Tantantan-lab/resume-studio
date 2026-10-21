@@ -1,9 +1,6 @@
 /* Local-only resume interchange.
  * JSON schema v1: {version:1, language:'zh'|'en', meta:{title}, style:{...},
  * profiles:{zh:{basics,education,experience,projects,skills}, en:{...}}}.
- * Optional referenceFontAudit: {fonts:string[<=30], fileName:string,
- * checkedAt:string, verified:false}; this records detected names, never a
- * claim that a local font or layout matches a reference.
  * Every imported object is reconstructed from allowlisted keys. JSON is the
  * lossless, bilingual editable format. DOCX contains the current language;
  * DOCX import provides a best-effort draft and the complete extracted text.
@@ -74,7 +71,8 @@ export async function exportDocx(input) {
   const font = { ascii: s.fontEN, hAnsi: s.fontEN, cs: s.fontEN, eastAsia: s.fontCN };
   const line = Math.round(s.lineHeight * 240);
   const body = Math.round(s.bodySize * 2);
-  const color = s.accent.replace('#', '');
+  const color = '202734';
+  const accentColor = s.accent.replace('#', '');
   const run = (text, extra = {}) =>
     new d.TextRun({ text: clean(text, 10000), font, size: body, color, ...extra });
   const spacing = { before: 0, after: 35, line, lineRule: d.LineRuleType?.AUTO || 'auto' };
@@ -89,6 +87,7 @@ export async function exportDocx(input) {
       [
         run(p.basics.name || (cn ? '姓名待补充' : 'YOUR NAME'), {
           bold: true,
+          color: accentColor,
           size: Math.round(s.titleSize * 2),
         }),
       ],
@@ -121,7 +120,7 @@ export async function exportDocx(input) {
     }),
   );
   let photo;
-  if (p.basics.photo) {
+  if (p.basics.photo && s.showPhoto !== false) {
     try {
       photo = await preparePhoto(p.basics.photo);
     } catch (error) {
@@ -182,8 +181,8 @@ export async function exportDocx(input) {
   warnings.forEach(ioWarning);
   function section(title) {
     out.push(
-      paragraph([run(title, { bold: true, size: body + 1 })], {
-        border: { bottom: { color, size: 4, space: 3, style: d.BorderStyle.SINGLE } },
+      paragraph([run(title, { bold: true, color: accentColor, size: body + 1 })], {
+        border: { bottom: { color: accentColor, size: 4, space: 3, style: d.BorderStyle.SINGLE } },
         spacing: { before: 110, after: 60, line },
         keepNext: true,
       }),

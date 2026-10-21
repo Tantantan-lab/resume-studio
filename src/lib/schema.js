@@ -1,8 +1,12 @@
 // Shared, DOM-free resume schema used by both the browser and local Agent.
+import { getPaperTemplate } from './paper-design.js';
 const SECTION_LIMIT = 60;
 const BULLET_LIMIT = 40;
 const MAX_PHOTO_LENGTH = 2 * 1024 * 1024;
 export const BASE_STYLE = {
+  template: 'classic',
+  showPhoto: true,
+  fillPage: false,
   fontCN: 'Arial Unicode MS',
   fontEN: 'Arial',
   bodySize: 10.5,
@@ -266,11 +270,16 @@ export function normalizeState(input, warnings = []) {
   if (raw.fontCN && !FONTS.has(raw.fontCN))
     warnings.push('中文字体不在支持列表，已使用 Arial Unicode MS。');
   if (raw.fontEN && !FONTS.has(raw.fontEN)) warnings.push('英文字体不在支持列表，已使用 Arial。');
+  if (raw.template !== undefined && getPaperTemplate(raw.template).id !== raw.template)
+    warnings.push('不支持的纸面模板，已使用经典单栏。');
   const result = {
     version: 1,
     language: input.language,
     meta: { title: clean(input.meta?.title, 200) || '我的简历' },
     style: {
+      template: getPaperTemplate(raw.template).id,
+      showPhoto: typeof raw.showPhoto === 'boolean' ? raw.showPhoto : true,
+      fillPage: raw.fillPage === true,
       fontCN: font('fontCN'),
       fontEN: font('fontEN'),
       bodySize: numberStyle(raw.bodySize, 10.5, 8, 16),
@@ -287,27 +296,6 @@ export function normalizeState(input, warnings = []) {
       en: normalizeProfile(input.profiles.en, 'en', warnings),
     },
   };
-  if (input.referenceFontAudit !== undefined) {
-    const audit = input.referenceFontAudit;
-    if (!record(audit) || !Array.isArray(audit.fonts))
-      throw new Error('referenceFontAudit 必须包含字体名称数组。');
-    if (audit.fonts.some((item) => typeof item !== 'string'))
-      throw new Error('参考字体名称必须为文本。');
-    if (audit.fonts.length > 30) warnings.push('参考字体记录最多保留 30 个名称。');
-    result.referenceFontAudit = {
-      fonts: [
-        ...new Set(
-          audit.fonts
-            .slice(0, 30)
-            .map((item) => clean(item, 200))
-            .filter(Boolean),
-        ),
-      ],
-      fileName: textField(audit, 'fileName', 200, warnings, 'referenceFontAudit'),
-      checkedAt: textField(audit, 'checkedAt', 80, warnings, 'referenceFontAudit'),
-      verified: false,
-    };
-  }
   return result;
 }
 
@@ -341,4 +329,33 @@ export function sortProjectsByDate(profile) {
     return bv.localeCompare(av);
   });
   return profile;
+}
+
+// A profile counts as having content only when it carries real text or entries.
+// Entry ids and empty placeholders never count.
+export function profileHasContent(profile) {
+  if (!profile) return false;
+  const basics = profile.basics || {};
+  if (
+    ['name', 'phone', 'email', 'target', 'salary', 'links', 'photo'].some(
+      (key) => typeof basics[key] === 'string' && basics[key].trim(),
+    )
+  )
+    return true;
+  for (const section of ['education', 'experience', 'projects', 'skills']) {
+    for (const entry of profile[section] || []) {
+      if (!entry || typeof entry !== 'object') continue;
+      if (
+        Object.entries(entry).some(
+          ([key, value]) =>
+            key !== 'id' &&
+            ((typeof value === 'string' && value.trim()) ||
+              (Array.isArray(value) &&
+                value.some((item) => typeof item === 'string' && item.trim()))),
+        )
+      )
+        return true;
+    }
+  }
+  return false;
 }

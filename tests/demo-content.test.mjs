@@ -1,7 +1,12 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
 import { defaultState, demoRoles } from '../src/demo/data.js';
-import { createDemoState, replaceLegacyDemoState } from '../src/demo/demo-content.js';
+import {
+  createDemoState,
+  replaceLegacyDemoState,
+  replacePreviousDemoState,
+  replaceShowcaseChineseState,
+} from '../src/demo/demo-content.js';
 const clone = (value) => JSON.parse(JSON.stringify(value));
 function legacyState() {
   const state = clone(defaultState);
@@ -33,7 +38,10 @@ test('fictional bilingual defaults are consistent and contain no previous resume
   for (const lang of ['zh', 'en']) {
     const profile = defaultState.profiles[lang];
     assert.ok(/虚构|Fictional/.test(profile.basics.links));
-    assert.equal(profile.basics.email, 'zhiyao.chen@example.com');
+    assert.equal(
+      profile.basics.email,
+      lang === 'zh' ? 'zhiyao.chen@example.com' : 'emily.carter@example.com',
+    );
     assert.equal(profile.experience.length, 2);
     assert.equal(profile.projects.length, 2);
     assert.deepEqual(
@@ -50,7 +58,7 @@ test('all five role variants use only the new fictional content', () => {
     assert.equal(state.language, 'en');
     assert.equal(state.profiles.zh.basics.target, role.zh);
     assert.equal(state.profiles.en.basics.target, role.en);
-    assert.ok(state.meta.title.endsWith('杭州'));
+    assert.ok(state.meta.title.endsWith(' · 演示'));
     assert.equal(state.profiles.zh.basics.name, '陈知遥');
   });
 });
@@ -62,7 +70,7 @@ test('legacy demo replacement removes old content, retains layout and photos, an
   state.style.bodySize = 11;
   assert.equal(replaceLegacyDemoState(state), true);
   assert.ok(!JSON.stringify(state).includes('legacy-content-marker'));
-  assert.equal(state.profiles.en.basics.name, 'ZHIYAO CHEN');
+  assert.equal(state.profiles.en.basics.name, 'Emily Carter');
   assert.equal(state.profiles.zh.basics.target, demoRoles[1].zh);
   assert.equal(state.profiles.zh.basics.photo, 'existing-demo-photo');
   assert.equal(state.style.bodySize, 11);
@@ -77,4 +85,37 @@ test('personal and mixed identities are preserved without partial replacement', 
     assert.equal(replaceLegacyDemoState(state), false);
     assert.equal(JSON.stringify(state), before);
   }
+});
+
+test('English showcase upgrade changes only the exact previous demo persona', () => {
+  assert.equal(defaultState.language, 'zh');
+  assert.equal(defaultState.style.template, 'minimal');
+  const previous = clone(defaultState);
+  previous.profiles.zh.basics.name = '陈知遥';
+  previous.profiles.en.basics.name = 'ZHIYAO CHEN';
+  for (const lang of ['zh', 'en']) previous.profiles[lang].basics.email = 'zhiyao.chen@example.com';
+  const personal = clone(previous);
+  personal.profiles.en.basics.email = 'personal@example.org';
+  const before = JSON.stringify(personal);
+  assert.equal(replacePreviousDemoState(personal), false);
+  assert.equal(JSON.stringify(personal), before);
+  assert.equal(replacePreviousDemoState(previous), true);
+  assert.equal(previous.language, 'zh');
+  assert.equal(previous.profiles.zh.basics.name, '陈知遥');
+  assert.equal(previous.profiles.en.basics.name, 'Emily Carter');
+  assert.equal(replacePreviousDemoState(previous), false);
+});
+
+test('Chinese profile restore keeps the English persona and existing photo', () => {
+  const state = clone(defaultState);
+  state.profiles.zh.basics.name = '艾米莉·卡特';
+  state.profiles.zh.basics.email = 'emily.carter@example.com';
+  state.profiles.zh.basics.photo = 'existing-demo-photo';
+  state.language = 'en';
+  assert.equal(replaceShowcaseChineseState(state), true);
+  assert.equal(state.language, 'zh');
+  assert.equal(state.profiles.zh.basics.name, '陈知遥');
+  assert.equal(state.profiles.en.basics.name, 'Emily Carter');
+  assert.equal(state.profiles.zh.basics.photo, 'existing-demo-photo');
+  assert.equal(replaceShowcaseChineseState(state), false);
 });

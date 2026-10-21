@@ -5,6 +5,15 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## 2026-10-21 Paper design and English showcase
+
+- Added four paper layouts with color controls, optional photo display and persisted JSON settings.
+- Added automatic A4 spacing expansion with an overflow guard and a bounded gap limit for very sparse content.
+- Added independent English/Chinese editor UI, defaulting to English, without translating resume data in place.
+- Replaced only known fictional demo identities with an English-first Emily Carter showcase and a new generated portrait.
+- Preserved selected-resume metadata during asynchronous visual exports.
+- Verified four layouts in both languages, their PNG exports, sidebar colors, real print PDF, hidden-photo Word, JSON roundtrip, fill behavior and library-only downloads.
+
 ## [0.2.0] - 2026-10-21
 
 ### Added

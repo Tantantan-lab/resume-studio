@@ -105,7 +105,9 @@ export function seedLibrary() {
   const now = Date.now();
   const isNewDemo =
     store.state.profiles?.zh?.basics?.name === '陈知遥' &&
-    store.state.profiles?.zh?.basics?.email === 'zhiyao.chen@example.com';
+    store.state.profiles?.zh?.basics?.email === 'zhiyao.chen@example.com' &&
+    store.state.profiles?.en?.basics?.name === 'Emily Carter' &&
+    store.state.profiles?.en?.basics?.email === 'emily.carter@example.com';
   const region = isNewDemo ? demoRegion : '深圳';
   const currentEntry = {
     id: crypto.randomUUID(),

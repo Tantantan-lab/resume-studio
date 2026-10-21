@@ -7,7 +7,13 @@ import { renderPreview } from './preview.js';
 import { renderPhotoEditor, bindPhotoEditor } from './photo.js';
 import { renderTerms } from './terms-view.js';
 import { renderers } from './renderers.js';
-import { notify } from './ui.js';
+import {
+  PAPER_TEMPLATES,
+  PAPER_COLORS,
+  getPaperTemplate,
+  applyPaperTemplate,
+  paperAccent,
+} from './paper-design.js';
 
 function setAt(path, value) {
   const autoKeys = path === 'basics.target' || path === 'basics.salary';
@@ -42,8 +48,19 @@ const sectionInfo = {
   experience: ['03 / EXPERIENCE', '工作经历', '用具体行动、工作产出和可核实的结果说明你做了什么。'],
   projects: ['04 / PROJECTS', '项目经历', '突出与你申请岗位相关的实践，清楚标明模拟项目。'],
   skills: ['05 / SKILLS', '专业技能', '工具写到具体用途，专业词汇与真实经历对应。'],
-  style: ['LAYOUT / TYPOGRAPHY', '字体与排版', '设置会保留在 JSON 中，下一次继续使用相同版式。'],
+  style: [
+    'PAPER / DESIGN',
+    '纸面设计',
+    '为简历选择版式，再调整主题色、照片、字体与留白。设置随当前简历保存。',
+  ],
   terms: ['LIBRARY / LANGUAGE', '岗位专业词库', '来自公开岗位资料整理，结合你的经历标注使用依据。'],
+};
+const nextSection = {
+  basics: ['education', '下一步：教育背景 →'],
+  education: ['experience', '下一步：工作经历 →'],
+  experience: ['projects', '下一步：项目经历 →'],
+  projects: ['skills', '下一步：专业技能 →'],
+  skills: ['style', '下一步：纸面设计 →'],
 };
 function entryTools(i, n) {
   return `<div class="entry-tools"><strong>条目 ${String(i + 1).padStart(2, '0')}</strong><button class="icon-btn" data-move="${i}" data-dir="-1" aria-label="上移条目" ${i === 0 ? 'disabled' : ''}>↑</button><button class="icon-btn" data-move="${i}" data-dir="1" aria-label="下移条目" ${i === n - 1 ? 'disabled' : ''}>↓</button><button class="icon-btn" data-remove="${i}" aria-label="删除条目">×</button></div>`;
@@ -115,8 +132,9 @@ export function renderEditor() {
   else
     body =
       '<input class="terms-search" id="terms-search" placeholder="搜索中文或英文术语" aria-label="搜索专业术语"><div id="term-list"></div>';
+  const next = nextSection[store.section];
   $('#editor').innerHTML =
-    `<div class="editor-card"><div class="editor-heading"><span class="overline">${over}</span><h2>${title}</h2><p>${description}</p></div><div class="editor-body">${body}</div>${store.section === 'basics' ? `<div class="editor-footer"><span>编辑后自动保存</span><button class="btn" data-next="education">下一步：教育背景 →</button></div>` : ''}</div>`;
+    `<div class="editor-card"><div class="editor-heading"><span class="overline">${over}</span><h2>${title}</h2><p>${description}</p></div><div class="editor-body">${body}</div>${next ? `<div class="editor-footer"><span>编辑后自动保存</span><button class="btn" data-next="${next[0]}">${next[1]}</button></div>` : ''}</div>`;
   document
     .querySelectorAll('.nav-item')
     .forEach((e) => e.classList.toggle('active', e.dataset.section === store.section));
@@ -170,28 +188,76 @@ export function renderEditor() {
     renderEditor();
   });
   if (store.section === 'basics') bindPhotoEditor();
-  if (store.section === 'style') bindStyle();
+  if (store.section === 'style') {
+    bindStyle();
+    renderPreview();
+  }
   if (store.section === 'terms') {
     renderTerms('');
     $('#terms-search').oninput = (e) => renderTerms(e.target.value);
   }
 }
 function renderStyle() {
-  return `<div class="form-grid"><label class="field"><span>中文字体</span><select data-font="fontCN">${['Arial Unicode MS', 'Microsoft YaHei', 'SimSun', 'PingFang SC', 'Noto Sans CJK SC'].map((x) => `<option ${store.state.style.fontCN === x ? 'selected' : ''}>${x}</option>`).join('')}</select></label><label class="field"><span>英文字体</span><select data-font="fontEN">${['Arial', 'Calibri', 'Times New Roman', 'Georgia', 'Helvetica'].map((x) => `<option ${store.state.style.fontEN === x ? 'selected' : ''}>${x}</option>`).join('')}</select></label></div>${[
-    ['bodySize', '正文字号', 9, 12, 0.5, 'pt'],
-    ['titleSize', '姓名字号', 18, 28, 1, 'pt'],
-    ['lineHeight', '正文行距', 1.1, 1.65, 0.05, '倍'],
-    ['marginMm', '页边距', 12, 24, 1, 'mm'],
-  ]
-    .map(
-      ([key, label, min, max, step, unit]) =>
-        `<div class="style-control"><label for="setting-${key}">${label}<output id="value-${key}">${store.state.style[key]} ${unit}</output></label><input type="range" id="setting-${key}" data-setting="${key}" min="${min}" max="${max}" step="${step}" value="${store.state.style[key]}"></div>`,
-    )
-    .join(
-      '',
-    )}<button class="btn" id="reset-style">恢复经典单栏设置</button><div class="font-audit"><strong>参考 PDF 字体检测</strong><p>${store.state.referenceFontAudit?.fonts?.length ? '已读取参考字体：<br>' + store.state.referenceFontAudit.fonts.map((x) => `<code>${esc(x)}</code>`).join(' ') + '<br>已识别字体名称；仍需确认本机字体可用，并对照字号和间距。' : '还没有参考 PDF，尚未验证与超级简历字体一致。导入参考文件后可读取其中的字体名称。'}</p><button class="btn" id="font-import">导入参考 PDF</button></div><p style="font-size:10px;color:#8d9c96;line-height:1.8">预览依赖本机字体。PDF 导出保留浏览器实际渲染的字形；Word 文件可继续编辑。</p>`;
+  const selected = getPaperTemplate(store.state.style.template).id;
+  const accent = paperAccent(store.state.style.accent);
+  const designs = `<section class="paper-design-section" aria-labelledby="paper-template-heading"><div class="paper-section-head"><h3 id="paper-template-heading">选择纸面模板</h3><span>4 种版式 · 中英通用</span></div><div class="paper-template-grid">${PAPER_TEMPLATES.map((template) => `<button type="button" class="paper-template-card ${selected === template.id ? 'is-selected' : ''}" data-paper-template="${template.id}" aria-pressed="${selected === template.id}" aria-label="${template.name}" style="--card-accent:${template.preset.accent}"><span class="paper-mini paper-mini-${template.id}" aria-hidden="true"><i class="mini-name"></i><i class="mini-contact"></i><span class="mini-body"><span class="mini-side"><i></i><i></i><i></i></span><span class="mini-main"><i></i><i></i><i></i><i></i></span></span></span><span class="paper-template-copy"><small>${template.english}</small><strong>${template.name}</strong><span>${template.description}</span></span><span class="paper-template-check" aria-hidden="true">${selected === template.id ? '✓' : ''}</span></button>`).join('')}</div><p class="paper-help">选择模板会应用配套字体与留白；正文和照片文件保留，可继续微调。侧栏版适合视觉展示，岗位要求单栏时可选“海外简洁”。</p></section>`;
+  const colors = `<section class="paper-design-section"><div class="paper-section-head"><h3>主题与照片</h3><span>正文保持深色，重点更清楚</span></div><div class="paper-color-row"><div class="paper-swatches" role="group" aria-label="主题色">${PAPER_COLORS.map(({ color, name }) => `<button type="button" class="paper-swatch" data-paper-color="${color}" style="--swatch:${color}" aria-label="${name}" aria-pressed="${accent.toLowerCase() === color}" title="${name}">${accent.toLowerCase() === color ? '✓' : ''}</button>`).join('')}</div><label class="paper-custom-color">自选<input id="paper-accent" type="color" value="${accent}" aria-label="自定义主题色"></label></div><label class="paper-photo-toggle"><span><strong>在简历中显示照片</strong><small>按目标岗位要求选择，隐藏时保留原图。</small></span><input id="paper-show-photo" type="checkbox" ${store.state.style.showPhoto !== false ? 'checked' : ''}></label><label class="paper-photo-toggle paper-fill-toggle"><span><strong>自动铺满一页</strong><small>自动调整间距，保持字号不变；超过一页时保留原有分页。</small></span><input id="paper-fill-page" type="checkbox" ${store.state.style.fillPage === true ? 'checked' : ''}></label><output id="paper-fill-status" class="paper-fill-status" aria-live="polite"></output></section>`;
+  return (
+    designs +
+    colors +
+    `<div class="paper-section-head"><h3>字体与留白</h3><span>应用到当前简历的中英文版</span></div><div class="form-grid"><label class="field"><span>中文字体</span><select data-font="fontCN">${['Arial Unicode MS', 'Microsoft YaHei', 'SimSun', 'PingFang SC', 'Noto Sans CJK SC'].map((x) => `<option ${store.state.style.fontCN === x ? 'selected' : ''}>${x}</option>`).join('')}</select></label><label class="field"><span>英文字体</span><select data-font="fontEN">${['Arial', 'Calibri', 'Times New Roman', 'Georgia', 'Helvetica'].map((x) => `<option ${store.state.style.fontEN === x ? 'selected' : ''}>${x}</option>`).join('')}</select></label></div>${[
+      ['bodySize', '正文字号', 9, 12, 0.5, 'pt'],
+      ['titleSize', '姓名字号', 18, 28, 1, 'pt'],
+      ['lineHeight', '正文行距', 1.1, 1.65, 0.05, '倍'],
+      ['marginMm', '页边距', 12, 24, 1, 'mm'],
+    ]
+      .map(
+        ([key, label, min, max, step, unit]) =>
+          `<div class="style-control"><label for="setting-${key}">${label}<output id="value-${key}">${store.state.style[key]} ${unit}</output></label><input type="range" id="setting-${key}" data-setting="${key}" min="${min}" max="${max}" step="${step}" value="${store.state.style[key]}"></div>`,
+      )
+      .join(
+        '',
+      )}<button class="btn" id="reset-style">恢复经典单栏设置</button><p style="font-size:10px;color:#8d9c96;line-height:1.8">预览依赖本机字体。PDF 导出保留浏览器实际渲染的字形；Word 文件可继续编辑。</p>`
+  );
 }
 function bindStyle() {
+  document.querySelectorAll('[data-paper-template]').forEach((button) => {
+    button.onclick = () => {
+      store.state.style = applyPaperTemplate(store.state.style, button.dataset.paperTemplate);
+      save();
+      renderEditor();
+      renderPreview();
+    };
+  });
+  const setAccent = (color) => {
+    store.state.style.accent = paperAccent(color);
+    save();
+    renderPreview();
+  };
+  document.querySelectorAll('[data-paper-color]').forEach((button) => {
+    button.onclick = () => {
+      setAccent(button.dataset.paperColor);
+      renderEditor();
+    };
+  });
+  $('#paper-accent').oninput = (event) => {
+    setAccent(event.target.value);
+    document.querySelectorAll('[data-paper-color]').forEach((button) => {
+      const selected = button.dataset.paperColor === event.target.value.toLowerCase();
+      button.setAttribute('aria-pressed', String(selected));
+      button.textContent = selected ? '✓' : '';
+    });
+  };
+  $('#paper-fill-page').onchange = (event) => {
+    store.state.style.fillPage = event.target.checked;
+    save();
+    renderPreview();
+  };
+  $('#paper-show-photo').onchange = (event) => {
+    store.state.style.showPhoto = event.target.checked;
+    save();
+    renderPreview();
+  };
   document.querySelectorAll('[data-font]').forEach(
     (e) =>
       (e.onchange = () => {
@@ -220,42 +286,5 @@ function bindStyle() {
     save();
     renderEditor();
     renderPreview();
-  };
-  $('#font-import').onclick = () => $('#font-file').click();
-}
-export function initFontImport() {
-  const input = $('#font-file');
-  if (!input) return;
-  input.onchange = async (e) => {
-    const f = e.target.files[0];
-    if (!f) return;
-    try {
-      if (f.size > 15 * 1024 * 1024) throw new Error('参考 PDF 请小于 15 MB');
-      const lib = window.PDFLib;
-      const pdf = await lib.PDFDocument.load(await f.arrayBuffer(), { ignoreEncryption: false });
-      const found = new Set();
-      for (const [, o] of pdf.context.enumerateIndirectObjects()) {
-        if (o instanceof lib.PDFDict) {
-          const b = o.get(lib.PDFName.of('BaseFont'));
-          if (b) {
-            const raw = b.decodeText ? b.decodeText() : b.toString();
-            found.add(raw.replace(/^\//, '').replace(/^[A-Z]{6}\+/, ''));
-          }
-        }
-      }
-      if (!found.size) throw new Error('未发现可读取的字体，文件可能已转为图片');
-      store.state.referenceFontAudit = {
-        fonts: [...found],
-        fileName: f.name,
-        checkedAt: new Date().toISOString(),
-        verified: false,
-      };
-      save();
-      renderEditor();
-      notify('参考字体已识别。请按名称选择字体并对照预览。');
-    } catch (err) {
-      notify('字体检测：' + err.message);
-    }
-    e.target.value = '';
   };
 }

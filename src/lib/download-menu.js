@@ -15,8 +15,7 @@ export function initDownloadMenu() {
     downloadMenu.hidden = true;
     downloadBtn.setAttribute('aria-expanded', 'false');
   }
-  async function exportPng() {
-    const vs = viewState();
+  async function exportPng(vs) {
     const { canvas } = await renderPreviewCanvas();
     const blob = await canvasBlob(canvas);
     downloadBlob(blob, exportFilename(vs, 'png'));
@@ -38,6 +37,7 @@ export function initDownloadMenu() {
       (item) =>
         (item.onclick = async () => {
           const type = item.dataset.export;
+          const selected = structuredClone(viewState());
           closeDownload();
           downloadBtn.disabled = true;
           const warnings = [];
@@ -46,18 +46,18 @@ export function initDownloadMenu() {
           let success = '';
           try {
             if (type === 'json') {
-              exportJson(viewState());
+              exportJson(selected);
               success = '已保存完整双语数据与排版设置。';
             } else if (type === 'word-visual') {
               const pages = await renderPreviewPages();
-              await exportDocxImage(viewState(), pages);
+              await exportDocxImage(selected, pages);
               success = 'Word 已生成（与预览一致）。';
             } else if (type === 'word') {
-              await exportDocx(viewState());
+              await exportDocx(selected);
               success = '可编辑 Word 已生成（排版近似）。';
             } else if (type === 'pdf') {
               const pages = await renderPreviewPages();
-              await exportPdfImage(viewState(), pages);
+              await exportPdfImage(selected, pages);
               success = 'PDF 已生成（与预览一致）。';
             } else if (type === 'pdf-text') {
               syncPrintRoot();
@@ -65,7 +65,7 @@ export function initDownloadMenu() {
               exportPrint();
             } else if (type === 'png') {
               notify('正在生成图片…');
-              await exportPng();
+              await exportPng(selected);
               success = '图片已生成。';
             }
             if (warnings.length) notify(`导出完成，但注意：${warnings.join('；')}`);

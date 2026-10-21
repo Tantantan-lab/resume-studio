@@ -10,8 +10,12 @@ import {
 import { autoResumeName, LEGACY_TITLES } from './resume-utils.js';
 import { sortProjectsByDate } from './schema.js';
 import { applyDemoPhotoToState } from '../demo/demo-photo.js';
-import { demoRegion } from '../demo/data.js';
-import { replaceLegacyDemoState } from '../demo/demo-content.js';
+import { demoRegion, defaultState } from '../demo/data.js';
+import {
+  replaceLegacyDemoState,
+  replacePreviousDemoState,
+  replaceShowcaseChineseState,
+} from '../demo/demo-content.js';
 
 const LEGACY_DEFAULTS = {
   salary: '6–8K',
@@ -187,5 +191,89 @@ export function runLateMigrations() {
     }
   } catch {
     // Keep all non-demo records intact if this optional migration cannot be saved.
+  }
+  // The English showcase upgrade is restricted to known fictional demo identities.
+  try {
+    const migrationKey = KEY + '.english-demo-20261021';
+    if (!localStorage.getItem(migrationKey)) {
+      const upgrade = (candidate) => {
+        const replaced = replacePreviousDemoState(candidate);
+        const zh = candidate?.profiles?.zh?.basics;
+        const en = candidate?.profiles?.en?.basics;
+        if (
+          !replaced &&
+          !(
+            zh?.name === '艾米莉·卡特' &&
+            en?.name === 'Emily Carter' &&
+            zh.email === 'emily.carter@example.com' &&
+            en.email === 'emily.carter@example.com'
+          )
+        )
+          return false;
+        candidate.language = 'en';
+        candidate.style = {
+          ...defaultState.style,
+          ...candidate.style,
+          template: candidate.style?.template || 'minimal',
+          fillPage: candidate.style?.fillPage ?? true,
+        };
+        return true;
+      };
+      let changed = upgrade(store.state);
+      for (const entry of store.library) {
+        if (upgrade(entry.state)) {
+          entry.region = demoRegion;
+          entry.note = 'Fictional demo';
+          entry.updatedAt = Date.now();
+          changed = true;
+        }
+      }
+      for (const version of store.versions) {
+        if (upgrade(version.state)) {
+          version.label = 'Fictional demo snapshot';
+          changed = true;
+        }
+      }
+      if (changed) {
+        localStorage.setItem(KEY, JSON.stringify(store.state));
+        localStorage.setItem(LIB_KEY, JSON.stringify(store.library));
+        localStorage.setItem(VERSIONS_KEY, JSON.stringify(store.versions));
+        localStorage.setItem(KEY + '.ui-language', 'en');
+      }
+      localStorage.setItem(migrationKey, '1');
+    }
+  } catch {
+    /* Optional showcase update; personal and mixed identities are untouched. */
+  }
+  // Chinese-first demo: the Chinese profile returns to Chen Zhiyao while the
+  // English profile stays Emily Carter. Known fictional demo emails only.
+  try {
+    const migrationKey = KEY + '.demo-zh-20261021';
+    if (!localStorage.getItem(migrationKey)) {
+      let changed = replaceShowcaseChineseState(store.state);
+      for (const entry of store.library) {
+        if (replaceShowcaseChineseState(entry.state)) {
+          entry.region = demoRegion;
+          entry.note = '虚构演示';
+          entry.updatedAt = Date.now();
+          changed = true;
+        }
+      }
+      for (const version of store.versions) {
+        if (replaceShowcaseChineseState(version.state)) {
+          version.label = '虚构演示快照';
+          changed = true;
+        }
+      }
+      if (changed) {
+        localStorage.setItem(KEY, JSON.stringify(store.state));
+        localStorage.setItem(LIB_KEY, JSON.stringify(store.library));
+        localStorage.setItem(VERSIONS_KEY, JSON.stringify(store.versions));
+        localStorage.setItem(KEY + '.ui-language', 'zh');
+      }
+      localStorage.setItem(migrationKey, '1');
+    }
+  } catch {
+    /* Optional Chinese profile restore; non-demo identities are untouched. */
   }
 }
