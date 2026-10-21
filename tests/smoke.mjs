@@ -86,10 +86,7 @@ try {
     assetRefs.some((ref) => ref.includes('./vendor/docx.js')),
     'dist index should load the vendor classic script',
   );
-  assert(
-    title.includes('演示') || title.includes('Marketing'),
-    `unexpected page title: ${title}`,
-  );
+  assert(title.includes('演示') || title.includes('Marketing'), `unexpected page title: ${title}`);
   assert(
     (await page.locator('#library-count').innerText()) === '6',
     'demo library should seed 6 resumes',
@@ -161,7 +158,17 @@ try {
   const previewText = await preview.innerText();
   for (const text of ['陈知遥', '虚构演示', '森语集数字零售', '知野内容工作室', '校园闲置交换小站'])
     assert(previewText.includes(text), `Chinese fictional demo missing ${text}`);
-  for (const text of ['艾米莉·卡特', '柳叶', '北线', '布里斯托', 'Ozon', 'APEC', '农资', '雅思', '数字贸易'])
+  for (const text of [
+    '艾米莉·卡特',
+    '柳叶',
+    '北线',
+    '布里斯托',
+    'Ozon',
+    'APEC',
+    '农资',
+    '雅思',
+    '数字贸易',
+  ])
     assert(!previewText.includes(text), `old content remains: ${text}`);
   assert(
     await preview.evaluate((el) => el.scrollHeight <= 1123),
@@ -199,10 +206,7 @@ try {
     await page.click(`[data-export="${type}"]`);
     const download = await pendingDownload;
     const filename = download.suggestedFilename();
-    assert(
-      filename.includes('跨境电商运营'),
-      `${type} should use the selected resume title`,
-    );
+    assert(filename.includes('跨境电商运营'), `${type} should use the selected resume title`);
     const destination = path.join(downloadDir, filename);
     await download.saveAs(destination);
     assert((await download.failure()) === null, `${type} download failed`);
