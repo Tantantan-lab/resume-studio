@@ -11,9 +11,22 @@ export function resumeName(entry) {
   return base + (entry.note ? ` · ${entry.note}` : '');
 }
 
-export function fileBase(vs) {
-  return ((vs.meta?.title || '').trim() || vs.profiles[vs.language]?.basics?.name || 'Resume')
-    .replace(/\s*\/\s*/g, '-')
-    .replace(/[<>:"/\\|?*]/g, '_')
-    .slice(0, 80);
+export const LEGACY_TITLES = new Set(['我的海外运营简历', '我的简历', '']);
+
+export function exportFilename(state, extension) {
+  const profile = state.profiles[state.language];
+  const title = (state.meta?.title || '').trim().replace(/\s*\/\s*/g, '-');
+  const base =
+    title ||
+    [profile.basics.name || 'Resume', state.language === 'zh' ? '中文简历' : 'English_Resume'].join(
+      '_',
+    );
+  return (
+    base
+      .replace(/[<>:"/\\|?*]/g, '_')
+      .replace(/[\x00-\x1f]/g, '')
+      .slice(0, 110) +
+    '.' +
+    extension
+  );
 }

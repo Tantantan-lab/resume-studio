@@ -9,6 +9,8 @@
  * DOCX import provides a best-effort draft and the complete extracted text.
  */
 import { clean, normalizeState, photoInfo } from './lib/schema.js';
+import { exportFilename } from './lib/resume-utils.js';
+import { downloadBlob } from './lib/download.js';
 export { normalizeState };
 
 const MAX_BYTES = 10 * 1024 * 1024;
@@ -48,42 +50,13 @@ async function preparePhoto(value) {
     if (image && typeof image.close === 'function') image.close();
   }
 }
-function safeFilename(state, extension) {
-  const profile = state.profiles[state.language];
-  const title = (state.meta?.title || '').trim().replace(/\s*\/\s*/g, '-');
-  const base =
-    title ||
-    [profile.basics.name || 'Resume', state.language === 'zh' ? '中文简历' : 'English_Resume'].join(
-      '_',
-    );
-  return (
-    base
-      .replace(/[<>:"/\\|?*]/g, '_')
-      .replace(/[\x00-\x1f]/g, '')
-      .slice(0, 110) +
-    '.' +
-    extension
-  );
-}
-function download(blob, filename) {
-  const url = URL.createObjectURL(blob);
-  const link = document.createElement('a');
-  link.href = url;
-  link.download = filename;
-  link.style.display = 'none';
-  document.body.appendChild(link);
-  link.click();
-  link.remove();
-  setTimeout(() => URL.revokeObjectURL(url), 60000);
-}
-
 export function exportJson(input) {
   const warnings = [];
   const state = normalizeState(input, warnings);
   const blob = new Blob([JSON.stringify(state, null, 2)], {
     type: 'application/json;charset=utf-8',
   });
-  download(blob, safeFilename(state, 'json'));
+  downloadBlob(blob, exportFilename(state, 'json'));
   warnings.forEach(ioWarning);
   return blob;
 }
@@ -319,7 +292,7 @@ export async function exportDocx(input) {
     ],
   });
   const blob = await d.Packer.toBlob(doc);
-  download(blob, safeFilename(state, 'docx').replace(/\.docx$/, '_可编辑版.docx'));
+  downloadBlob(blob, exportFilename(state, 'docx').replace(/\.docx$/, '_可编辑版.docx'));
   return blob;
 }
 
@@ -659,7 +632,7 @@ export async function exportDocxImage(input, pages) {
     ],
   });
   const blob = await d.Packer.toBlob(doc);
-  download(blob, safeFilename(state, 'docx').replace(/\.docx$/, '_图片版.docx'));
+  downloadBlob(blob, exportFilename(state, 'docx').replace(/\.docx$/, '_图片版.docx'));
   return blob;
 }
 
@@ -675,7 +648,7 @@ export async function exportPdfImage(input, pages) {
   }
   const bytes = await pdf.save();
   const blob = new Blob([bytes], { type: 'application/pdf' });
-  download(blob, safeFilename(state, 'pdf'));
+  downloadBlob(blob, exportFilename(state, 'pdf'));
   return blob;
 }
 

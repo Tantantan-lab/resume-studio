@@ -1,5 +1,5 @@
 import { $, esc } from './util.js';
-import { icon } from './ui.js';
+import { icon, notify } from './ui.js';
 import { current, save, syncPhotoToLibrary } from './store.js';
 import { renderPreview } from './preview.js';
 import { renderers } from './renderers.js';

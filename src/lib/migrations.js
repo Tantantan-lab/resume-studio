@@ -7,10 +7,20 @@ import {
   persistActive,
   applyPhotoToState,
 } from './store.js';
-import { autoResumeName } from './resume-utils.js';
+import { autoResumeName, LEGACY_TITLES } from './resume-utils.js';
+import { sortProjectsByDate } from './schema.js';
 import { applyDemoPhotoToState } from '../demo/demo-photo.js';
 import { demoRegion } from '../demo/data.js';
 import { replaceLegacyDemoState } from '../demo/demo-content.js';
+
+const LEGACY_DEFAULTS = {
+  salary: '6–8K',
+  target: { zh: '市场营销 / 产品运营', en: 'Marketing / Product Operations' },
+};
+const LEGACY_OLD_TARGET = {
+  zh: '海外电商运营 / 海外内容运营',
+  en: 'Overseas E-commerce Operations / Content Operations',
+};
 
 export function runEarlyMigrations() {
   try {
@@ -21,15 +31,11 @@ export function runEarlyMigrations() {
         const b = profile?.basics;
         if (!b) return;
         if (!('salary' in b) || b.salary === '') {
-          b.salary = '6–8K';
+          b.salary = LEGACY_DEFAULTS.salary;
           changed = true;
         }
-        const old =
-          lang === 'zh'
-            ? '海外电商运营 / 海外内容运营'
-            : 'Overseas E-commerce Operations / Content Operations';
-        if (!b.target || b.target === old) {
-          b.target = lang === 'zh' ? '市场营销 / 产品运营' : 'Marketing / Product Operations';
+        if (!b.target || b.target === LEGACY_OLD_TARGET[lang]) {
+          b.target = LEGACY_DEFAULTS.target[lang];
           changed = true;
         }
       };
@@ -45,23 +51,11 @@ export function runLateMigrations() {
   try {
     const SK = KEY + '.sort-projects-20261020';
     if (!localStorage.getItem(SK)) {
-      const sortProfile = (p) => {
-        if (!p?.projects) return;
-        const val = (x) => x.end || x.start || '';
-        p.projects.sort((a, b) => {
-          const av = val(a),
-            bv = val(b);
-          if (!av && !bv) return 0;
-          if (!av) return 1;
-          if (!bv) return -1;
-          return bv.localeCompare(av);
-        });
-      };
-      sortProfile(store.state.profiles?.zh);
-      sortProfile(store.state.profiles?.en);
+      sortProjectsByDate(store.state.profiles?.zh);
+      sortProjectsByDate(store.state.profiles?.en);
       store.library.forEach((e) => {
-        sortProfile(e.state.profiles?.zh);
-        sortProfile(e.state.profiles?.en);
+        sortProjectsByDate(e.state.profiles?.zh);
+        sortProjectsByDate(e.state.profiles?.en);
       });
       try {
         localStorage.setItem(KEY, JSON.stringify(store.state));
@@ -74,10 +68,9 @@ export function runLateMigrations() {
   try {
     const TK = KEY + '.title-migrate-20261020';
     if (!localStorage.getItem(TK)) {
-      const old = new Set(['我的海外运营简历', '我的简历', '']);
       const fix = (st, region) => {
         if (!st?.meta) return;
-        if (old.has((st.meta.title || '').trim()))
+        if (LEGACY_TITLES.has((st.meta.title || '').trim()))
           st.meta.title = autoResumeName(st.profiles?.[st.language] || st.profiles?.zh, region);
       };
       fix(store.state, store.library.find((x) => x.id === store.activeResumeId)?.region || '深圳');

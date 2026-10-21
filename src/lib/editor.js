@@ -2,10 +2,12 @@ import { defaultState } from '../demo/data.js';
 import { $, esc, clone } from './util.js';
 import { store, current, save, snapshot } from './store.js';
 import { autoResumeName } from './resume-utils.js';
+import { EMPTY_ENTRIES } from './schema.js';
 import { renderPreview } from './preview.js';
 import { renderPhotoEditor, bindPhotoEditor } from './photo.js';
 import { renderTerms } from './terms-view.js';
 import { renderers } from './renderers.js';
+import { notify } from './ui.js';
 
 function setAt(path, value) {
   const autoKeys = path === 'basics.target' || path === 'basics.salary';
@@ -161,21 +163,7 @@ export function renderEditor() {
         }),
     );
   $('#add-entry')?.addEventListener('click', () => {
-    const empty = {
-      education: {
-        school: '',
-        major: '',
-        degree: '',
-        start: '',
-        end: '',
-        gpa: '',
-        rank: '',
-        courses: '',
-      },
-      experience: { company: '', role: '', start: '', end: '', bullets: [] },
-      projects: { title: '', award: '', start: '', end: '', bullets: [] },
-      skills: { label: '', text: '' },
-    }[store.section];
+    const empty = clone(EMPTY_ENTRIES[store.section]);
     current()[store.section].push({ id: crypto.randomUUID(), ...empty });
     save();
     renderEditor();

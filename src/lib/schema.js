@@ -2,7 +2,7 @@
 const SECTION_LIMIT = 60;
 const BULLET_LIMIT = 40;
 const MAX_PHOTO_LENGTH = 2 * 1024 * 1024;
-const BASE_STYLE = {
+export const BASE_STYLE = {
   fontCN: 'Arial Unicode MS',
   fontEN: 'Arial',
   bodySize: 10.5,
@@ -310,3 +310,33 @@ export function normalizeState(input, warnings = []) {
 }
 
 export { clean, photoInfo };
+
+export const EMPTY_ENTRIES = {
+  education: {
+    school: '',
+    major: '',
+    degree: '',
+    start: '',
+    end: '',
+    gpa: '',
+    rank: '',
+    courses: '',
+  },
+  experience: { company: '', role: '', start: '', end: '', bullets: [] },
+  projects: { title: '', award: '', start: '', end: '', bullets: [] },
+  skills: { label: '', text: '' },
+};
+
+export function sortProjectsByDate(profile) {
+  if (!profile?.projects) return profile;
+  const dateValue = (item) => item.end || item.start || '';
+  profile.projects.sort((a, b) => {
+    const av = dateValue(a);
+    const bv = dateValue(b);
+    if (!av && !bv) return 0;
+    if (!av) return 1;
+    if (!bv) return -1;
+    return bv.localeCompare(av);
+  });
+  return profile;
+}

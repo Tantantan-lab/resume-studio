@@ -32,7 +32,7 @@ Agent 输出必须是完整 schema，而不是 diff。`apply` 会备份旧版本
 
 ### 加一个基本信息字段
 
-> 在 `src/app.js` 的基本信息表单、`src/lib/schema.js` 的 `normalizeProfile`/DOCX 导入导出、`src/demo/data.js` 中加入 `basics.<field>`。保持中英文独立；旧数据缺失时给空值；不要改动 localStorage 键名。更新 `docs/DATA_MODEL.md`，运行 `npm run check && npm run build`。
+> 在 `src/lib/editor.js` 的基本信息表单、`src/lib/schema.js` 的 `normalizeProfile`/DOCX 导入导出、`src/demo/data.js` 中加入 `basics.<field>`。保持中英文独立；旧数据缺失时给空值；不要改动 localStorage 键名。更新 `docs/DATA_MODEL.md`，运行 `npm run check && npm run build`。
 
 ### 改样式但不改导出
 
@@ -40,7 +40,7 @@ Agent 输出必须是完整 schema，而不是 diff。`apply` 会备份旧版本
 
 ### 增加一个导出格式
 
-> 在 `src/app.js` 的 `#download-options` 菜单和下载 handler 中增加 `data-export="..."`；复用 `renderPreviewCanvas()`/`renderPreviewPages()` 保证视觉一致；文件名用 `state.meta.title`；更新 README/CHANGELOG。
+> 在 `src/lib/download-menu.js` 的菜单/handler 中增加 `data-export="..."`；复用 `renderPreviewCanvas()`/`renderPreviewPages()` 保证视觉一致；文件名用 `state.meta.title`；更新 README/CHANGELOG。
 
 ### 让 Agent 直接写入简历
 
@@ -48,7 +48,7 @@ Agent 输出必须是完整 schema，而不是 diff。`apply` 会备份旧版本
 
 ### 新增简历库模板
 
-> 在 `src/app.js` 的 `seedLibrary()` 中增加一个 `mk(...)` 条目（岗位、英文岗位、薪资），并保持标题为「岗位 薪资 地区」。不要影响已有用户的 library；只影响首次初始化。
+> 在 `src/lib/store.js` 的 `seedLibrary()` 中增加一个 `mk(...)` 条目（岗位、英文岗位、薪资），并保持标题为「岗位 薪资 地区」。不要影响已有用户的 library；只影响首次初始化。
 
 ## 人改流程
 

@@ -50,6 +50,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Browser and Agent now share `src/io.js#normalizeState`; the Agent wrapper only adds policy
 - CI now runs the browser smoke test
 - Extracted `src/lib/schema.js`, `visual-export.js`, `download.js` and `resume-utils.js` from `app.js`/`io.js`
+- Split `app.js` into store, migrations, editor, library, preview, photo, versions, import and download modules (~86 lines left)
+- Consolidated shared naming, sorting, filename, style, empty-entry and download helpers
 
 ### Known limitations
 

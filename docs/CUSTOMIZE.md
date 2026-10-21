@@ -27,7 +27,7 @@ npm run build
 
 ## 修改简历库预置版本
 
-编辑 `src/app.js` 的 `seedLibrary()`：
+编辑 `src/lib/store.js` 的 `seedLibrary()`：
 
 ```js
 mk('市场营销 / 产品运营', 'Marketing / Product Operations', '6–8K')

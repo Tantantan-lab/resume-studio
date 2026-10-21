@@ -1,4 +1,5 @@
 import { demoPhoto } from './demo-photo.js';
+import { BASE_STYLE } from '../lib/schema.js';
 
 // Entirely fictional demo persona. No content is derived from a user's resume.
 export const demoRegion = '杭州';
@@ -38,15 +39,7 @@ export const defaultState = {
   meta: {
     title: '市场营销 / 产品运营 8–10K 杭州',
   },
-  style: {
-    fontCN: 'Arial Unicode MS',
-    fontEN: 'Arial',
-    bodySize: 10,
-    titleSize: 22,
-    lineHeight: 1.25,
-    marginMm: 16,
-    accent: '#111111',
-  },
+  style: { ...BASE_STYLE, bodySize: 10, lineHeight: 1.25 },
   profiles: {
     zh: {
       basics: {

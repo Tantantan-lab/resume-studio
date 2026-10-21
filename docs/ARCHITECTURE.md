@@ -43,12 +43,27 @@ On edit:
 2. Debounced `save()` writes the active state and updates the active library entry.
 3. `renderPreview()` renders the paper and sets `document.title` / the top title input.
 
-## Shared modules
+## Modules
 
-- `src/lib/schema.js` — DOM-free normalization shared by browser and Agent
-- `src/lib/visual-export.js` — preview DOM → canvas → A4 pages
-- `src/lib/download.js` — browser download helper
-- `src/lib/resume-utils.js` — resume names and download file names
+`src/app.js` is now wiring only (~86 lines): boot, navigation, zoom, title, help, print hooks and initial render.
+
+| Module                     | Responsibility                                            |
+| -------------------------- | --------------------------------------------------------- |
+| `src/lib/store.js`         | singleton state, persistence, library seeding, photo sync |
+| `src/lib/migrations.js`    | one-time legacy/demo migrations (early + late)            |
+| `src/lib/editor.js`        | editor/section rendering, style controls, font audit      |
+| `src/lib/library.js`       | resume library cards and actions                          |
+| `src/lib/preview.js`       | A4 preview and print-root sync                            |
+| `src/lib/photo.js`         | upload/crop/position pipeline                             |
+| `src/lib/terms-view.js`    | terminology panel                                         |
+| `src/lib/versions.js`      | snapshot modal                                            |
+| `src/lib/import-ui.js`     | import review modal and file wiring                       |
+| `src/lib/download-menu.js` | download menu and PNG export                              |
+| `src/lib/schema.js`        | DOM-free normalization shared by browser and Agent        |
+| `src/lib/visual-export.js` | preview DOM → canvas → A4 pages                           |
+| `src/lib/download.js`      | browser download helper                                   |
+| `src/lib/resume-utils.js`  | resume names, file names, legacy titles                   |
+| `src/lib/renderers.js`     | editor/library registry avoiding import cycles            |
 
 ## Preview and exports
 
@@ -82,7 +97,6 @@ The image-based exports guarantee visual parity but are not text-editable. The e
 
 ## Known limitations
 
-- One `app.js` monolith (~42 KB); see Roadmap for splitting.
 - Browser print is still available for Ctrl/Cmd+P, but PDF downloads no longer use it.
 - Image-based Word/PDF pages are sliced at A4 height; very long resumes may split mid-block.
 - `localStorage` is ~5 MB and photos are copied into each library entry.
