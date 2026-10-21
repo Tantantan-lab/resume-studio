@@ -1,5 +1,5 @@
 import { exportJson, exportDocx, exportDocxImage, exportPdfImage, importFile } from './io.js';
-import { autoResumeName, resumeName, fileBase } from './lib/resume-utils.js';
+import { fileBase } from './lib/resume-utils.js';
 import { downloadBlob } from './lib/download.js';
 import { canvasBlob, renderPreviewCanvas, renderPreviewPages } from './lib/visual-export.js';
 import { $, esc, clone } from './lib/util.js';
@@ -9,20 +9,16 @@ import {
   current,
   viewState,
   save,
-  persistActive,
   snapshot,
-  syncPhotoToLibrary,
   loadPersistedState,
   loadLibrary,
-  KEY,
-  LIB_KEY,
-  ACTIVE_KEY,
 } from './lib/store.js';
 import { runEarlyMigrations, runLateMigrations } from './lib/migrations.js';
 import { renderPreview, syncPrintRoot } from './lib/preview.js';
-import { renderPhotoEditor, bindPhotoEditor, initPhotoUpload } from './lib/photo.js';
-import { renderTerms } from './lib/terms-view.js';
+import { initPhotoUpload } from './lib/photo.js';
 import { renderers } from './lib/renderers.js';
+import { renderEditor, initFontImport } from './lib/editor.js';
+import { renderLibrary } from './lib/library.js';
 loadPersistedState();
 runEarlyMigrations();
 loadLibrary();
@@ -41,363 +37,6 @@ $('#module-nav').innerHTML = modules
   )
   .join('');
 icons();
-function openLibraryResume(id) {
-  const entry = store.library.find((x) => x.id === id);
-  if (!entry) return;
-  store.previewResumeId = id;
-  if (id !== store.activeResumeId) {
-    persistActive();
-    store.activeResumeId = id;
-    store.state = clone(entry.state);
-    try {
-      localStorage.setItem(ACTIVE_KEY, id);
-      localStorage.setItem(KEY, JSON.stringify(store.state));
-    } catch {}
-  }
-  store.section = 'basics';
-  renderEditor();
-  renderPreview();
-  notify('已进入修改：' + resumeName(entry));
-  window.scrollTo({ top: 0, behavior: 'smooth' });
-}
-function selectLibraryResume(id) {
-  if (!store.library.some((x) => x.id === id)) return;
-  store.previewResumeId = id;
-  renderLibrary();
-  renderPreview();
-}
-function newLibraryResume() {
-  persistActive();
-  const now = Date.now();
-  const entry = {
-    id: crypto.randomUUID(),
-    state: clone(store.state),
-    region: '深圳',
-    note: '新版本',
-    createdAt: now,
-    updatedAt: now,
-  };
-  store.library.unshift(entry);
-  store.activeResumeId = entry.id;
-  store.previewResumeId = entry.id;
-  try {
-    localStorage.setItem(LIB_KEY, JSON.stringify(store.library));
-    localStorage.setItem(ACTIVE_KEY, store.activeResumeId);
-    localStorage.setItem(KEY, JSON.stringify(store.state));
-  } catch {}
-  store.section = 'basics';
-  renderEditor();
-  renderPreview();
-  notify('已新建简历；修改求职意向和期望薪资后，名称会自动更新。');
-  window.scrollTo({ top: 0, behavior: 'smooth' });
-}
-function deleteLibraryResume(id) {
-  const entry = store.library.find((x) => x.id === id);
-  if (!entry) return;
-  openModal(
-    `<h2>删除这份简历？</h2><p>${esc(resumeName(entry))}</p><p>删除后无法恢复；建议先在当前简历里导出 JSON 备份。</p><div class="modal-actions"><button class="btn" data-close>取消</button><button class="btn primary" id="confirm-delete-resume">删除</button></div>`,
-  );
-  $('#confirm-delete-resume').onclick = () => {
-    store.library = store.library.filter((x) => x.id !== id);
-    try {
-      localStorage.setItem(LIB_KEY, JSON.stringify(store.library));
-    } catch {}
-    if (store.activeResumeId === id) {
-      if (store.library.length) {
-        store.activeResumeId = store.library[0].id;
-        store.state = clone(store.library[0].state);
-        try {
-          localStorage.setItem(ACTIVE_KEY, store.activeResumeId);
-          localStorage.setItem(KEY, JSON.stringify(store.state));
-        } catch {}
-      } else {
-        store.activeResumeId = null;
-        try {
-          localStorage.removeItem(ACTIVE_KEY);
-        } catch {}
-      }
-    }
-    if (store.previewResumeId === id)
-      store.previewResumeId = store.activeResumeId || store.library[0]?.id || null;
-    $('#modal').close();
-    renderEditor();
-    renderPreview();
-    notify('已删除简历。');
-  };
-}
-function renderLibrary() {
-  const lc = $('#library-count');
-  if (lc) lc.textContent = store.library.length;
-  if (!store.previewResumeId || !store.library.some((x) => x.id === store.previewResumeId))
-    store.previewResumeId = store.activeResumeId || store.library[0]?.id || null;
-  const cards = store.library
-    .map((entry) => {
-      const active = entry.id === store.activeResumeId;
-      const previewing = entry.id === store.previewResumeId;
-      const lang = entry.state.language === 'en' ? 'English' : '中文';
-      const updated = new Date(entry.updatedAt).toLocaleString('zh-CN', {
-        month: '2-digit',
-        day: '2-digit',
-        hour: '2-digit',
-        minute: '2-digit',
-      });
-      return `<div class="resume-card${active ? ' is-active' : ''}${previewing ? ' is-preview' : ''}"><button class="resume-card-open" data-preview="${entry.id}"><span class="resume-card-name">${esc(resumeName(entry))}</span><span class="resume-card-meta">${lang} · 更新于 ${esc(updated)}${active ? ' · <b>当前编辑</b>' : ''}${previewing ? ' · <b>预览中</b>' : ''}</span></button><div class="resume-card-actions"><button class="btn" data-edit="${entry.id}">修改</button><button class="icon-btn" data-delete="${entry.id}" aria-label="删除简历">×</button></div></div>`;
-    })
-    .join('');
-  $('#editor').innerHTML =
-    `<div class="editor-card library-card"><div class="library-head"><div><span class="overline">MY RESUMES</span><h2>我的简历</h2><p>点击卡片预览右侧内容，需要修改时点「修改」。</p></div><button class="btn primary" id="new-resume">＋ 新建简历</button></div><div class="library-list">${cards || '<div class="library-empty">还没有简历，点击「新建简历」开始。</div>'}</div><div class="library-note">每个版本独立保存；点击卡片只预览，点「修改」进入编辑。切换版本前，当前修改会自动保存。</div></div>`;
-  $('#new-resume').onclick = newLibraryResume;
-  $('#editor')
-    .querySelectorAll('[data-preview]')
-    .forEach((e) => (e.onclick = () => selectLibraryResume(e.dataset.preview)));
-  $('#editor')
-    .querySelectorAll('[data-edit]')
-    .forEach((e) => (e.onclick = () => openLibraryResume(e.dataset.edit)));
-  $('#editor')
-    .querySelectorAll('[data-delete]')
-    .forEach(
-      (e) =>
-        (e.onclick = (ev) => {
-          ev.stopPropagation();
-          deleteLibraryResume(e.dataset.delete);
-        }),
-    );
-  document
-    .querySelectorAll('.nav-item')
-    .forEach((e) => e.classList.toggle('active', e.dataset.section === store.section));
-}
-function setAt(path, value) {
-  const autoKeys = path === 'basics.target' || path === 'basics.salary';
-  const entry = store.library.find((x) => x.id === store.activeResumeId);
-  const region = entry?.region || '深圳';
-  const oldAuto = autoResumeName(current(), region);
-  const oldTitle = (store.state.meta?.title || '').trim();
-  const p = path.split('.');
-  let o = path.startsWith('style.') ? store.state : current();
-  for (let i = 0; i < p.length - 1; i++) o = o[p[i]];
-  o[p.at(-1)] = value;
-  if (autoKeys && (!oldTitle || oldTitle === oldAuto)) {
-    store.state.meta = store.state.meta || {};
-    store.state.meta.title = autoResumeName(current(), region);
-  }
-  save();
-  renderPreview();
-}
-function getAt(path) {
-  return path
-    .split('.')
-    .reduce((o, k) => o?.[k], path.startsWith('style.') ? store.state : current());
-}
-function field(label, path, type = 'text', placeholder = '', help = '') {
-  let v = getAt(path) ?? '';
-  if (Array.isArray(v)) v = v.join('\n');
-  return `<label class="field"><span>${label}</span>${type === 'textarea' ? `<textarea data-path="${path}" placeholder="${esc(placeholder)}">${esc(v)}</textarea>` : `<input type="${type}" data-path="${path}" value="${esc(v)}" placeholder="${esc(placeholder)}" ${type === 'month' ? '' : 'maxlength="600"'}>`}${help ? `<small>${help}</small>` : ''}</label>`;
-}
-const sectionInfo = {
-  basics: ['01 / PROFILE', '基本信息', '先完善联系信息，再让招聘方一眼看到你的求职方向。'],
-  education: ['02 / EDUCATION', '教育背景', '优先保留与目标岗位相关的课程和学业表现。'],
-  experience: ['03 / EXPERIENCE', '工作经历', '用具体行动、工作产出和可核实的结果说明你做了什么。'],
-  projects: ['04 / PROJECTS', '项目经历', '突出与你申请岗位相关的实践，清楚标明模拟项目。'],
-  skills: ['05 / SKILLS', '专业技能', '工具写到具体用途，专业词汇与真实经历对应。'],
-  style: ['LAYOUT / TYPOGRAPHY', '字体与排版', '设置会保留在 JSON 中，下一次继续使用相同版式。'],
-  terms: [
-    'LIBRARY / LANGUAGE',
-    '岗位专业词库',
-    '来自 BOSS 公开岗位摘录，结合你的经历标注使用依据。',
-  ],
-};
-function entryTools(i, n) {
-  return `<div class="entry-tools"><strong>条目 ${String(i + 1).padStart(2, '0')}</strong><button class="icon-btn" data-move="${i}" data-dir="-1" aria-label="上移条目" ${i === 0 ? 'disabled' : ''}>↑</button><button class="icon-btn" data-move="${i}" data-dir="1" aria-label="下移条目" ${i === n - 1 ? 'disabled' : ''}>↓</button><button class="icon-btn" data-remove="${i}" aria-label="删除条目">×</button></div>`;
-}
-function renderEditor() {
-  const lc = $('#library-count');
-  if (lc) lc.textContent = store.library.length;
-  if (store.section === 'library') {
-    renderLibrary();
-    renderPreview();
-    return;
-  }
-  const [over, title, description] = sectionInfo[store.section];
-  let body = '';
-  if (store.section === 'basics')
-    body =
-      renderPhotoEditor() +
-      field('姓名', 'basics.name', 'text', '填写你的姓名') +
-      `<div class="form-grid">${field('联系电话', 'basics.phone', 'tel', '方便联系的手机号码')}${field('邮箱', 'basics.email', 'email', 'your@email.com')}</div>` +
-      field('求职意向', 'basics.target', 'text', '例如 市场营销 / 产品运营') +
-      field('期望薪资', 'basics.salary', 'text', '例如 6–8K / 面议') +
-      field('作品集 / 个人主页', 'basics.links', 'text', '可选，填写链接') +
-      `<div class="editor-note">中英文内容分开保存。切换语言后，可分别完善姓名拼写、职位名称和英文表达。</div>`;
-  else if (['education', 'experience', 'projects', 'skills'].includes(store.section)) {
-    const list = current()[store.section];
-    body =
-      list
-        .map((x, i) => {
-          const pre = store.section + '.' + i;
-          let b = entryTools(i, list.length);
-          if (store.section === 'education')
-            b +=
-              field('学校', pre + '.school') +
-              `<div class="form-grid">${field('专业', pre + '.major')}${field('学历', pre + '.degree')}</div><div class="form-grid">${field('开始时间', pre + '.start', 'month')}${field('结束时间', pre + '.end', 'month')}</div><div class="form-grid">${field('GPA', pre + '.gpa', 'text', '例如 3.82/5.0')}${field('专业排名', pre + '.rank', 'text', '例如 专业前5%')}</div>` +
-              field('相关课程', pre + '.courses', 'textarea');
-          if (store.section === 'experience')
-            b +=
-              field('公司名称', pre + '.company') +
-              field('职位', pre + '.role') +
-              `<div class="form-grid">${field('开始时间', pre + '.start', 'month')}${field('结束时间', pre + '.end', 'month')}</div>` +
-              field(
-                '工作内容与成果',
-                pre + '.bullets',
-                'textarea',
-                '每行一条经历',
-                '每行生成一个项目符号。不填写没有依据的数据。',
-              );
-          if (store.section === 'projects')
-            b +=
-              field('项目名称', pre + '.title') +
-              field('奖项 / 补充说明', pre + '.award', 'text', '可选') +
-              `<div class="form-grid">${field('开始时间', pre + '.start', 'month')}${field('结束时间', pre + '.end', 'month')}</div>` +
-              field(
-                '项目内容',
-                pre + '.bullets',
-                'textarea',
-                '每行一条项目描述',
-                '模拟经营结果请保留“模拟”说明。',
-              );
-          if (store.section === 'skills')
-            b +=
-              field('技能类别', pre + '.label', 'text', '例如 AI 内容创作') +
-              field('技能描述', pre + '.text', 'textarea');
-          return `<div class="entry">${b}</div>`;
-        })
-        .join('') +
-      `<button class="add-entry" id="add-entry">＋ 添加${title.includes('教育') ? '教育经历' : title.includes('实习') ? '实习经历' : store.section === 'skills' ? '技能' : '项目'}</button>`;
-  } else if (store.section === 'style') body = renderStyle();
-  else
-    body =
-      '<input class="terms-search" id="terms-search" placeholder="搜索中文或英文术语" aria-label="搜索专业术语"><div id="term-list"></div>';
-  $('#editor').innerHTML =
-    `<div class="editor-card"><div class="editor-heading"><span class="overline">${over}</span><h2>${title}</h2><p>${description}</p></div><div class="editor-body">${body}</div>${store.section === 'basics' ? `<div class="editor-footer"><span>编辑后自动保存</span><button class="btn" data-next="education">下一步：教育背景 →</button></div>` : ''}</div>`;
-  document
-    .querySelectorAll('.nav-item')
-    .forEach((e) => e.classList.toggle('active', e.dataset.section === store.section));
-  $('#editor')
-    .querySelectorAll('[data-path]')
-    .forEach((e) =>
-      e.addEventListener('input', () =>
-        setAt(
-          e.dataset.path,
-          e.dataset.path.endsWith('.bullets')
-            ? e.value.split('\n').filter((x) => x.trim())
-            : e.value,
-        ),
-      ),
-    );
-  $('#editor')
-    .querySelectorAll('[data-remove]')
-    .forEach(
-      (e) =>
-        (e.onclick = () => {
-          snapshot('删除条目前');
-          current()[store.section].splice(+e.dataset.remove, 1);
-          save();
-          renderEditor();
-          renderPreview();
-        }),
-    );
-  $('#editor')
-    .querySelectorAll('[data-move]')
-    .forEach(
-      (e) =>
-        (e.onclick = () => {
-          let a = current()[store.section],
-            i = +e.dataset.move,
-            j = i + +e.dataset.dir;
-          [a[i], a[j]] = [a[j], a[i]];
-          save();
-          renderEditor();
-          renderPreview();
-        }),
-    );
-  $('#add-entry')?.addEventListener('click', () => {
-    const empty = {
-      education: {
-        school: '',
-        major: '',
-        degree: '',
-        start: '',
-        end: '',
-        gpa: '',
-        rank: '',
-        courses: '',
-      },
-      experience: { company: '', role: '', start: '', end: '', bullets: [] },
-      projects: { title: '', award: '', start: '', end: '', bullets: [] },
-      skills: { label: '', text: '' },
-    }[store.section];
-    current()[store.section].push({ id: crypto.randomUUID(), ...empty });
-    save();
-    renderEditor();
-    renderPreview();
-  });
-  $('[data-next]')?.addEventListener('click', (e) => {
-    store.section = e.currentTarget.dataset.next;
-    renderEditor();
-  });
-  if (store.section === 'basics') bindPhotoEditor();
-  if (store.section === 'style') bindStyle();
-  if (store.section === 'terms') {
-    renderTerms('');
-    $('#terms-search').oninput = (e) => renderTerms(e.target.value);
-  }
-}
-function renderStyle() {
-  return `<div class="form-grid"><label class="field"><span>中文字体</span><select data-font="fontCN">${['Arial Unicode MS', 'Microsoft YaHei', 'SimSun', 'PingFang SC', 'Noto Sans CJK SC'].map((x) => `<option ${store.state.style.fontCN === x ? 'selected' : ''}>${x}</option>`).join('')}</select></label><label class="field"><span>英文字体</span><select data-font="fontEN">${['Arial', 'Calibri', 'Times New Roman', 'Georgia', 'Helvetica'].map((x) => `<option ${store.state.style.fontEN === x ? 'selected' : ''}>${x}</option>`).join('')}</select></label></div>${[
-    ['bodySize', '正文字号', 9, 12, 0.5, 'pt'],
-    ['titleSize', '姓名字号', 18, 28, 1, 'pt'],
-    ['lineHeight', '正文行距', 1.1, 1.65, 0.05, '倍'],
-    ['marginMm', '页边距', 12, 24, 1, 'mm'],
-  ]
-    .map(
-      ([key, label, min, max, step, unit]) =>
-        `<div class="style-control"><label for="setting-${key}">${label}<output id="value-${key}">${store.state.style[key]} ${unit}</output></label><input type="range" id="setting-${key}" data-setting="${key}" min="${min}" max="${max}" step="${step}" value="${store.state.style[key]}"></div>`,
-    )
-    .join(
-      '',
-    )}<button class="btn" id="reset-style">恢复经典单栏设置</button><div class="font-audit"><strong>参考 PDF 字体检测</strong><p>${store.state.referenceFontAudit?.fonts?.length ? '已读取参考字体：<br>' + store.state.referenceFontAudit.fonts.map((x) => `<code>${esc(x)}</code>`).join(' ') + '<br>已识别字体名称；仍需确认本机字体可用，并对照字号和间距。' : '还没有参考 PDF，尚未验证与超级简历字体一致。导入参考文件后可读取其中的字体名称。'}</p><button class="btn" id="font-import">导入参考 PDF</button></div><p style="font-size:10px;color:#8d9c96;line-height:1.8">预览依赖本机字体。PDF 导出保留浏览器实际渲染的字形；Word 文件可继续编辑。</p>`;
-}
-function bindStyle() {
-  document.querySelectorAll('[data-font]').forEach(
-    (e) =>
-      (e.onchange = () => {
-        store.state.style[e.dataset.font] = e.value;
-        save();
-        renderPreview();
-      }),
-  );
-  document.querySelectorAll('[data-setting]').forEach(
-    (e) =>
-      (e.oninput = () => {
-        store.state.style[e.dataset.setting] = +e.value;
-        $('#value-' + e.dataset.setting).textContent =
-          e.value +
-          (e.dataset.setting === 'lineHeight'
-            ? ' 倍'
-            : e.dataset.setting === 'marginMm'
-              ? ' mm'
-              : ' pt');
-        save();
-        renderPreview();
-      }),
-  );
-  $('#reset-style').onclick = () => {
-    store.state.style = clone(defaultState.style);
-    save();
-    renderEditor();
-    renderPreview();
-  };
-  $('#font-import').onclick = () => $('#font-file').click();
-}
 function renderVersions() {
   openModal(
     `<h2>本机版本记录</h2><p>版本只保存在当前浏览器，导出 JSON 可以跨设备继续编辑。</p><button class="btn primary" id="save-version">保存当前版本</button><div>${store.versions.length ? store.versions.map((v, i) => `<div class="version-row"><div><strong>${esc(v.label)}</strong><small>${esc(v.time)}</small></div><button class="btn" data-restore="${i}">恢复</button></div>`).join('') : '<p>还没有手动保存的版本。</p>'}</div><div class="modal-actions"><button class="btn" data-close>关闭</button></div>`,
@@ -562,38 +201,6 @@ $('#help-btn').onclick = () =>
   openModal(
     `<h2>从一份材料，到多版简历</h2><ol><li>导入 Word、JSON 或文本。Word 导入后需核对识别结果。</li><li>按模块编辑内容，分别完善中文与英文版本。</li><li>在“字体与排版”调整字体、字号、行距和页边距。</li><li>点击右上角「下载」，可选择与预览一致的 Word/PDF、可编辑 Word、图片或 JSON。</li><li>PDF 直接生成；可编辑 Word 排版为近似值；JSON 可完整保留双语内容和版式，供下次导入复用。</li></ol><p>岗位词库来自公开招聘摘录，不代表你已具备所有技能。字体完全一致需使用参考 PDF 核对，并确保本机已安装对应字体。</p><div class="modal-actions"><button class="btn primary" data-close>知道了</button></div>`,
   );
-$('#font-file').onchange = async (e) => {
-  const f = e.target.files[0];
-  if (!f) return;
-  try {
-    if (f.size > 15 * 1024 * 1024) throw new Error('参考 PDF 请小于 15 MB');
-    const lib = window.PDFLib;
-    const pdf = await lib.PDFDocument.load(await f.arrayBuffer(), { ignoreEncryption: false });
-    const found = new Set();
-    for (const [, o] of pdf.context.enumerateIndirectObjects()) {
-      if (o instanceof lib.PDFDict) {
-        const b = o.get(lib.PDFName.of('BaseFont'));
-        if (b) {
-          const raw = b.decodeText ? b.decodeText() : b.toString();
-          found.add(raw.replace(/^\//, '').replace(/^[A-Z]{6}\+/, ''));
-        }
-      }
-    }
-    if (!found.size) throw new Error('未发现可读取的字体，文件可能已转为图片');
-    store.state.referenceFontAudit = {
-      fonts: [...found],
-      fileName: f.name,
-      checkedAt: new Date().toISOString(),
-      verified: false,
-    };
-    save();
-    renderEditor();
-    notify('参考字体已识别。请按名称选择字体并对照预览。');
-  } catch (err) {
-    notify('字体检测：' + err.message);
-  }
-  e.target.value = '';
-};
 $('#modal').addEventListener('click', (e) => {
   if (e.target === $('#modal')) $('#modal').close();
 });
@@ -601,6 +208,7 @@ window.addEventListener('beforeprint', syncPrintRoot);
 window.addEventListener('resize', () => renderPreview());
 renderers.renderEditor = renderEditor;
 renderers.renderLibrary = renderLibrary;
+initFontImport();
 initPhotoUpload();
 renderEditor();
 renderPreview();
