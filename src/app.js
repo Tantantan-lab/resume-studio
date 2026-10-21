@@ -1,6 +1,3 @@
-import { applyDemoPhotoToState } from './demo/demo-photo.js';
-import { defaultState, demoRegion, demoRoles } from './demo/data.js';
-import { createDemoState, replaceLegacyDemoState } from './demo/demo-content.js';
 import { terminology } from './terms.js';
 import { exportJson, exportDocx, exportDocxImage, exportPdfImage, importFile } from './io.js';
 import { autoResumeName, resumeName, fileBase } from './lib/resume-utils.js';
@@ -8,236 +5,25 @@ import { downloadBlob } from './lib/download.js';
 import { canvasBlob, renderPreviewCanvas, renderPreviewPages } from './lib/visual-export.js';
 import { $, esc, clone } from './lib/util.js';
 import { icon, icons, notify, openModal } from './lib/ui.js';
-const KEY = 'resume-studio.v1';
-const LIB_KEY = KEY + '.library',
-  ACTIVE_KEY = KEY + '.active';
-let library = [],
-  activeResumeId = null,
-  previewResumeId = null,
-  librarySeeded = false;
-let state = clone(defaultState),
-  section = 'basics',
-  scale = 0.65,
-  saveTimer;
-try {
-  const cached = JSON.parse(localStorage.getItem(KEY));
-  if (cached?.version === 1 && cached.profiles?.zh && cached.profiles?.en) state = cached;
-} catch {}
-let versions = [];
-try {
-  versions = JSON.parse(localStorage.getItem(KEY + '.versions')) || [];
-} catch {}
-try {
-  const MK = KEY + '.migrate-20261020';
-  if (!localStorage.getItem(MK)) {
-    let changed = false;
-    const apply = (profile, lang) => {
-      const b = profile?.basics;
-      if (!b) return;
-      if (!('salary' in b) || b.salary === '') {
-        b.salary = '6–8K';
-        changed = true;
-      }
-      const old =
-        lang === 'zh'
-          ? '海外电商运营 / 海外内容运营'
-          : 'Overseas E-commerce Operations / Content Operations';
-      if (!b.target || b.target === old) {
-        b.target = lang === 'zh' ? '市场营销 / 产品运营' : 'Marketing / Product Operations';
-        changed = true;
-      }
-    };
-    apply(state.profiles?.zh, 'zh');
-    apply(state.profiles?.en, 'en');
-    localStorage.setItem(MK, '1');
-    if (changed) save();
-  }
-} catch {}
-try {
-  const raw = localStorage.getItem(LIB_KEY);
-  if (raw === null) {
-    seedLibrary();
-  } else {
-    library = JSON.parse(raw) || [];
-    activeResumeId = localStorage.getItem(ACTIVE_KEY);
-    if (!library.some((x) => x.id === activeResumeId)) activeResumeId = library[0]?.id || null;
-  }
-} catch {
-  library = [];
-}
-try {
-  const SK = KEY + '.sort-projects-20261020';
-  if (!localStorage.getItem(SK)) {
-    const sortProfile = (p) => {
-      if (!p?.projects) return;
-      const val = (x) => x.end || x.start || '';
-      p.projects.sort((a, b) => {
-        const av = val(a),
-          bv = val(b);
-        if (!av && !bv) return 0;
-        if (!av) return 1;
-        if (!bv) return -1;
-        return bv.localeCompare(av);
-      });
-    };
-    sortProfile(state.profiles?.zh);
-    sortProfile(state.profiles?.en);
-    library.forEach((e) => {
-      sortProfile(e.state.profiles?.zh);
-      sortProfile(e.state.profiles?.en);
-    });
-    try {
-      localStorage.setItem(KEY, JSON.stringify(state));
-      localStorage.setItem(LIB_KEY, JSON.stringify(library));
-      localStorage.setItem(SK, '1');
-    } catch {}
-    const activeEntry = library.find((x) => x.id === activeResumeId);
-    if (activeEntry) {
-      activeEntry.state = clone(state);
-      activeEntry.updatedAt = Date.now();
-      try {
-        localStorage.setItem(LIB_KEY, JSON.stringify(library));
-      } catch {}
-    }
-  }
-} catch {}
-try {
-  const TK = KEY + '.title-migrate-20261020';
-  if (!localStorage.getItem(TK)) {
-    const old = new Set(['我的海外运营简历', '我的简历', '']);
-    const fix = (st, region) => {
-      if (!st?.meta) return;
-      if (old.has((st.meta.title || '').trim()))
-        st.meta.title = autoResumeName(st.profiles?.[st.language] || st.profiles?.zh, region);
-    };
-    fix(state, library.find((x) => x.id === activeResumeId)?.region || '深圳');
-    library.forEach((e) => fix(e.state, e.region || '深圳'));
-    try {
-      localStorage.setItem(KEY, JSON.stringify(state));
-      localStorage.setItem(LIB_KEY, JSON.stringify(library));
-      localStorage.setItem(TK, '1');
-    } catch {}
-    const ae = library.find((x) => x.id === activeResumeId);
-    if (ae) {
-      ae.state = clone(state);
-      ae.updatedAt = Date.now();
-      try {
-        localStorage.setItem(LIB_KEY, JSON.stringify(library));
-      } catch {}
-    }
-  }
-} catch {}
-try {
-  const PK = KEY + '.photo-sync-20261020';
-  if (!localStorage.getItem(PK)) {
-    let src = null;
-    const active = library.find((x) => x.id === activeResumeId);
-    if (active) {
-      for (const lang of ['zh', 'en']) {
-        const b = active.state.profiles?.[lang]?.basics;
-        if (b?.photo) {
-          src = {
-            photo: b.photo,
-            photoOriginal: b.photoOriginal || '',
-            photoPosition: b.photoPosition || 'center',
-          };
-          break;
-        }
-      }
-    }
-    if (!src) {
-      for (const e of library) {
-        for (const lang of ['zh', 'en']) {
-          const b = e.state.profiles?.[lang]?.basics;
-          if (b?.photo) {
-            src = {
-              photo: b.photo,
-              photoOriginal: b.photoOriginal || '',
-              photoPosition: b.photoPosition || 'center',
-            };
-            break;
-          }
-        }
-        if (src) break;
-      }
-    }
-    if (src) {
-      const apply = (st) => {
-        for (const lang of ['zh', 'en']) {
-          const b = st.profiles?.[lang]?.basics;
-          if (!b) continue;
-          b.photo = src.photo;
-          b.photoOriginal = src.photoOriginal;
-          b.photoPosition = src.photoPosition;
-        }
-      };
-      apply(state);
-      library.forEach((e) => {
-        apply(e.state);
-        e.updatedAt = Date.now();
-      });
-      const ae = library.find((x) => x.id === activeResumeId);
-      if (ae) ae.state = clone(state);
-      try {
-        localStorage.setItem(KEY, JSON.stringify(state));
-        localStorage.setItem(LIB_KEY, JSON.stringify(library));
-      } catch {}
-    }
-    localStorage.setItem(PK, '1');
-  }
-} catch {}
-
-// Only upgrade demo identities without a photo; preserve personal profiles and uploaded photos.
-try {
-  const migrationKey = KEY + '.demo-avatar-20261020';
-  if (!localStorage.getItem(migrationKey)) {
-    let changed = applyDemoPhotoToState(state);
-    for (const entry of library) {
-      if (applyDemoPhotoToState(entry.state)) {
-        entry.updatedAt = Date.now();
-        changed = true;
-      }
-    }
-    if (changed) {
-      localStorage.setItem(KEY, JSON.stringify(state));
-      localStorage.setItem(LIB_KEY, JSON.stringify(library));
-    }
-    localStorage.setItem(migrationKey, '1');
-  }
-} catch {
-  // Stored resumes stay intact if the browser cannot persist this optional upgrade.
-}
-
-// Replace only the previous exact demo persona, including demo-only saved snapshots.
-try {
-  const migrationKey = KEY + '.fictional-demo-content-20261020';
-  if (!localStorage.getItem(migrationKey)) {
-    let changed = replaceLegacyDemoState(state);
-    for (const entry of library) {
-      if (replaceLegacyDemoState(entry.state)) {
-        entry.region = demoRegion;
-        entry.note = entry.note === '当前版本' ? '虚构演示 · 当前版本' : '虚构演示';
-        entry.updatedAt = Date.now();
-        changed = true;
-      }
-    }
-    for (const version of versions) {
-      if (replaceLegacyDemoState(version.state)) {
-        version.label = '虚构演示快照';
-        changed = true;
-      }
-    }
-    if (changed) {
-      localStorage.setItem(KEY, JSON.stringify(state));
-      localStorage.setItem(LIB_KEY, JSON.stringify(library));
-      localStorage.setItem(KEY + '.versions', JSON.stringify(versions));
-    }
-    localStorage.setItem(migrationKey, '1');
-  }
-} catch {
-  // Keep all non-demo records intact if this optional migration cannot be saved.
-}
-
+import {
+  store,
+  current,
+  viewState,
+  save,
+  persistActive,
+  snapshot,
+  syncPhotoToLibrary,
+  loadPersistedState,
+  loadLibrary,
+  KEY,
+  LIB_KEY,
+  ACTIVE_KEY,
+} from './lib/store.js';
+import { runEarlyMigrations, runLateMigrations } from './lib/migrations.js';
+loadPersistedState();
+runEarlyMigrations();
+loadLibrary();
+runLateMigrations();
 const modules = [
   ['basics', '基本信息', 'user', '01'],
   ['education', '教育背景', 'education', '02'],
@@ -252,128 +38,28 @@ $('#module-nav').innerHTML = modules
   )
   .join('');
 icons();
-function current() {
-  return state.profiles[state.language];
-}
-function save() {
-  clearTimeout(saveTimer);
-  $('#save-status').textContent = '正在保存…';
-  saveTimer = setTimeout(() => {
-    try {
-      localStorage.setItem(KEY, JSON.stringify(state));
-      if (activeResumeId) {
-        const e = library.find((x) => x.id === activeResumeId);
-        if (e) {
-          e.state = clone(state);
-          e.updatedAt = Date.now();
-          localStorage.setItem(LIB_KEY, JSON.stringify(library));
-        }
-      }
-      $('#save-status').textContent = '已保存到本机';
-    } catch {
-      $('#save-status').textContent = '本机存储已满，请导出 JSON';
-    }
-  }, 350);
-}
-
-function viewState() {
-  return section === 'library' && previewResumeId
-    ? library.find((x) => x.id === previewResumeId)?.state || state
-    : state;
-}
-function syncPhotoToLibrary() {
-  const source = current().basics || {};
-  for (const lang of ['zh', 'en']) {
-    const b = state.profiles?.[lang]?.basics;
-    if (!b) continue;
-    b.photo = source.photo || '';
-    b.photoOriginal = source.photoOriginal || '';
-    b.photoPosition = source.photoPosition || 'center';
-  }
-  library.forEach((e) => {
-    for (const lang of ['zh', 'en']) {
-      const b = e.state.profiles?.[lang]?.basics;
-      if (!b) continue;
-      b.photo = source.photo || '';
-      b.photoOriginal = source.photoOriginal || '';
-      b.photoPosition = source.photoPosition || 'center';
-    }
-    e.updatedAt = Date.now();
-  });
-  try {
-    localStorage.setItem(LIB_KEY, JSON.stringify(library));
-  } catch {}
-}
-function persistActive() {
-  if (!activeResumeId) return;
-  const e = library.find((x) => x.id === activeResumeId);
-  if (!e) return;
-  e.state = clone(state);
-  e.updatedAt = Date.now();
-  try {
-    localStorage.setItem(LIB_KEY, JSON.stringify(library));
-  } catch {}
-}
-function seedLibrary() {
-  const now = Date.now();
-  const isNewDemo =
-    state.profiles?.zh?.basics?.name === '陈知遥' &&
-    state.profiles?.zh?.basics?.email === 'zhiyao.chen@example.com';
-  const region = isNewDemo ? demoRegion : '深圳';
-  const currentEntry = {
-    id: crypto.randomUUID(),
-    state: clone(state),
-    region,
-    note: isNewDemo ? '虚构演示 · 当前版本' : '当前版本',
-    createdAt: now,
-    updatedAt: now,
-  };
-  if (!currentEntry.state.meta) currentEntry.state.meta = {};
-  if (!currentEntry.state.meta.title || currentEntry.state.meta.title === '我的海外运营简历')
-    currentEntry.state.meta.title = autoResumeName(
-      currentEntry.state.profiles?.[currentEntry.state.language] || currentEntry.state.profiles?.zh,
-      region,
-    );
-  const variants = demoRoles.map((_, index) => ({
-    id: crypto.randomUUID(),
-    state: createDemoState(index),
-    region: demoRegion,
-    note: '虚构演示',
-    createdAt: now,
-    updatedAt: now,
-  }));
-  library = [...variants, currentEntry];
-  activeResumeId = variants[0].id;
-  state = clone(variants[0].state);
-  librarySeeded = true;
-  try {
-    localStorage.setItem(LIB_KEY, JSON.stringify(library));
-    localStorage.setItem(ACTIVE_KEY, activeResumeId);
-    localStorage.setItem(KEY, JSON.stringify(state));
-  } catch {}
-}
 function openLibraryResume(id) {
-  const entry = library.find((x) => x.id === id);
+  const entry = store.library.find((x) => x.id === id);
   if (!entry) return;
-  previewResumeId = id;
-  if (id !== activeResumeId) {
+  store.previewResumeId = id;
+  if (id !== store.activeResumeId) {
     persistActive();
-    activeResumeId = id;
-    state = clone(entry.state);
+    store.activeResumeId = id;
+    store.state = clone(entry.state);
     try {
       localStorage.setItem(ACTIVE_KEY, id);
-      localStorage.setItem(KEY, JSON.stringify(state));
+      localStorage.setItem(KEY, JSON.stringify(store.state));
     } catch {}
   }
-  section = 'basics';
+  store.section = 'basics';
   renderEditor();
   renderPreview();
   notify('已进入修改：' + resumeName(entry));
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 function selectLibraryResume(id) {
-  if (!library.some((x) => x.id === id)) return;
-  previewResumeId = id;
+  if (!store.library.some((x) => x.id === id)) return;
+  store.previewResumeId = id;
   renderLibrary();
   renderPreview();
 }
@@ -382,53 +68,54 @@ function newLibraryResume() {
   const now = Date.now();
   const entry = {
     id: crypto.randomUUID(),
-    state: clone(state),
+    state: clone(store.state),
     region: '深圳',
     note: '新版本',
     createdAt: now,
     updatedAt: now,
   };
-  library.unshift(entry);
-  activeResumeId = entry.id;
-  previewResumeId = entry.id;
+  store.library.unshift(entry);
+  store.activeResumeId = entry.id;
+  store.previewResumeId = entry.id;
   try {
-    localStorage.setItem(LIB_KEY, JSON.stringify(library));
-    localStorage.setItem(ACTIVE_KEY, activeResumeId);
-    localStorage.setItem(KEY, JSON.stringify(state));
+    localStorage.setItem(LIB_KEY, JSON.stringify(store.library));
+    localStorage.setItem(ACTIVE_KEY, store.activeResumeId);
+    localStorage.setItem(KEY, JSON.stringify(store.state));
   } catch {}
-  section = 'basics';
+  store.section = 'basics';
   renderEditor();
   renderPreview();
   notify('已新建简历；修改求职意向和期望薪资后，名称会自动更新。');
   window.scrollTo({ top: 0, behavior: 'smooth' });
 }
 function deleteLibraryResume(id) {
-  const entry = library.find((x) => x.id === id);
+  const entry = store.library.find((x) => x.id === id);
   if (!entry) return;
   openModal(
     `<h2>删除这份简历？</h2><p>${esc(resumeName(entry))}</p><p>删除后无法恢复；建议先在当前简历里导出 JSON 备份。</p><div class="modal-actions"><button class="btn" data-close>取消</button><button class="btn primary" id="confirm-delete-resume">删除</button></div>`,
   );
   $('#confirm-delete-resume').onclick = () => {
-    library = library.filter((x) => x.id !== id);
+    store.library = store.library.filter((x) => x.id !== id);
     try {
-      localStorage.setItem(LIB_KEY, JSON.stringify(library));
+      localStorage.setItem(LIB_KEY, JSON.stringify(store.library));
     } catch {}
-    if (activeResumeId === id) {
-      if (library.length) {
-        activeResumeId = library[0].id;
-        state = clone(library[0].state);
+    if (store.activeResumeId === id) {
+      if (store.library.length) {
+        store.activeResumeId = store.library[0].id;
+        store.state = clone(store.library[0].state);
         try {
-          localStorage.setItem(ACTIVE_KEY, activeResumeId);
-          localStorage.setItem(KEY, JSON.stringify(state));
+          localStorage.setItem(ACTIVE_KEY, store.activeResumeId);
+          localStorage.setItem(KEY, JSON.stringify(store.state));
         } catch {}
       } else {
-        activeResumeId = null;
+        store.activeResumeId = null;
         try {
           localStorage.removeItem(ACTIVE_KEY);
         } catch {}
       }
     }
-    if (previewResumeId === id) previewResumeId = activeResumeId || library[0]?.id || null;
+    if (store.previewResumeId === id)
+      store.previewResumeId = store.activeResumeId || store.library[0]?.id || null;
     $('#modal').close();
     renderEditor();
     renderPreview();
@@ -437,13 +124,13 @@ function deleteLibraryResume(id) {
 }
 function renderLibrary() {
   const lc = $('#library-count');
-  if (lc) lc.textContent = library.length;
-  if (!previewResumeId || !library.some((x) => x.id === previewResumeId))
-    previewResumeId = activeResumeId || library[0]?.id || null;
-  const cards = library
+  if (lc) lc.textContent = store.library.length;
+  if (!store.previewResumeId || !store.library.some((x) => x.id === store.previewResumeId))
+    store.previewResumeId = store.activeResumeId || store.library[0]?.id || null;
+  const cards = store.library
     .map((entry) => {
-      const active = entry.id === activeResumeId;
-      const previewing = entry.id === previewResumeId;
+      const active = entry.id === store.activeResumeId;
+      const previewing = entry.id === store.previewResumeId;
       const lang = entry.state.language === 'en' ? 'English' : '中文';
       const updated = new Date(entry.updatedAt).toLocaleString('zh-CN', {
         month: '2-digit',
@@ -474,41 +161,29 @@ function renderLibrary() {
     );
   document
     .querySelectorAll('.nav-item')
-    .forEach((e) => e.classList.toggle('active', e.dataset.section === section));
-}
-function snapshot(label) {
-  versions.unshift({
-    id: Date.now(),
-    label,
-    state: clone(state),
-    time: new Date().toLocaleString('zh-CN'),
-  });
-  versions = versions.slice(0, 8);
-  try {
-    localStorage.setItem(KEY + '.versions', JSON.stringify(versions));
-  } catch {
-    notify('版本存储空间不足，请保存 JSON 数据。');
-  }
+    .forEach((e) => e.classList.toggle('active', e.dataset.section === store.section));
 }
 function setAt(path, value) {
   const autoKeys = path === 'basics.target' || path === 'basics.salary';
-  const entry = library.find((x) => x.id === activeResumeId);
+  const entry = store.library.find((x) => x.id === store.activeResumeId);
   const region = entry?.region || '深圳';
   const oldAuto = autoResumeName(current(), region);
-  const oldTitle = (state.meta?.title || '').trim();
+  const oldTitle = (store.state.meta?.title || '').trim();
   const p = path.split('.');
-  let o = path.startsWith('style.') ? state : current();
+  let o = path.startsWith('style.') ? store.state : current();
   for (let i = 0; i < p.length - 1; i++) o = o[p[i]];
   o[p.at(-1)] = value;
   if (autoKeys && (!oldTitle || oldTitle === oldAuto)) {
-    state.meta = state.meta || {};
-    state.meta.title = autoResumeName(current(), region);
+    store.state.meta = store.state.meta || {};
+    store.state.meta.title = autoResumeName(current(), region);
   }
   save();
   renderPreview();
 }
 function getAt(path) {
-  return path.split('.').reduce((o, k) => o?.[k], path.startsWith('style.') ? state : current());
+  return path
+    .split('.')
+    .reduce((o, k) => o?.[k], path.startsWith('style.') ? store.state : current());
 }
 function field(label, path, type = 'text', placeholder = '', help = '') {
   let v = getAt(path) ?? '';
@@ -533,15 +208,15 @@ function entryTools(i, n) {
 }
 function renderEditor() {
   const lc = $('#library-count');
-  if (lc) lc.textContent = library.length;
-  if (section === 'library') {
+  if (lc) lc.textContent = store.library.length;
+  if (store.section === 'library') {
     renderLibrary();
     renderPreview();
     return;
   }
-  const [over, title, description] = sectionInfo[section];
+  const [over, title, description] = sectionInfo[store.section];
   let body = '';
-  if (section === 'basics')
+  if (store.section === 'basics')
     body =
       renderPhotoEditor() +
       field('姓名', 'basics.name', 'text', '填写你的姓名') +
@@ -550,19 +225,19 @@ function renderEditor() {
       field('期望薪资', 'basics.salary', 'text', '例如 6–8K / 面议') +
       field('作品集 / 个人主页', 'basics.links', 'text', '可选，填写链接') +
       `<div class="editor-note">中英文内容分开保存。切换语言后，可分别完善姓名拼写、职位名称和英文表达。</div>`;
-  else if (['education', 'experience', 'projects', 'skills'].includes(section)) {
-    const list = current()[section];
+  else if (['education', 'experience', 'projects', 'skills'].includes(store.section)) {
+    const list = current()[store.section];
     body =
       list
         .map((x, i) => {
-          const pre = section + '.' + i;
+          const pre = store.section + '.' + i;
           let b = entryTools(i, list.length);
-          if (section === 'education')
+          if (store.section === 'education')
             b +=
               field('学校', pre + '.school') +
               `<div class="form-grid">${field('专业', pre + '.major')}${field('学历', pre + '.degree')}</div><div class="form-grid">${field('开始时间', pre + '.start', 'month')}${field('结束时间', pre + '.end', 'month')}</div><div class="form-grid">${field('GPA', pre + '.gpa', 'text', '例如 3.82/5.0')}${field('专业排名', pre + '.rank', 'text', '例如 专业前5%')}</div>` +
               field('相关课程', pre + '.courses', 'textarea');
-          if (section === 'experience')
+          if (store.section === 'experience')
             b +=
               field('公司名称', pre + '.company') +
               field('职位', pre + '.role') +
@@ -574,7 +249,7 @@ function renderEditor() {
                 '每行一条经历',
                 '每行生成一个项目符号。不填写没有依据的数据。',
               );
-          if (section === 'projects')
+          if (store.section === 'projects')
             b +=
               field('项目名称', pre + '.title') +
               field('奖项 / 补充说明', pre + '.award', 'text', '可选') +
@@ -586,23 +261,23 @@ function renderEditor() {
                 '每行一条项目描述',
                 '模拟经营结果请保留“模拟”说明。',
               );
-          if (section === 'skills')
+          if (store.section === 'skills')
             b +=
               field('技能类别', pre + '.label', 'text', '例如 AI 内容创作') +
               field('技能描述', pre + '.text', 'textarea');
           return `<div class="entry">${b}</div>`;
         })
         .join('') +
-      `<button class="add-entry" id="add-entry">＋ 添加${title.includes('教育') ? '教育经历' : title.includes('实习') ? '实习经历' : section === 'skills' ? '技能' : '项目'}</button>`;
-  } else if (section === 'style') body = renderStyle();
+      `<button class="add-entry" id="add-entry">＋ 添加${title.includes('教育') ? '教育经历' : title.includes('实习') ? '实习经历' : store.section === 'skills' ? '技能' : '项目'}</button>`;
+  } else if (store.section === 'style') body = renderStyle();
   else
     body =
       '<input class="terms-search" id="terms-search" placeholder="搜索中文或英文术语" aria-label="搜索专业术语"><div id="term-list"></div>';
   $('#editor').innerHTML =
-    `<div class="editor-card"><div class="editor-heading"><span class="overline">${over}</span><h2>${title}</h2><p>${description}</p></div><div class="editor-body">${body}</div>${section === 'basics' ? `<div class="editor-footer"><span>编辑后自动保存</span><button class="btn" data-next="education">下一步：教育背景 →</button></div>` : ''}</div>`;
+    `<div class="editor-card"><div class="editor-heading"><span class="overline">${over}</span><h2>${title}</h2><p>${description}</p></div><div class="editor-body">${body}</div>${store.section === 'basics' ? `<div class="editor-footer"><span>编辑后自动保存</span><button class="btn" data-next="education">下一步：教育背景 →</button></div>` : ''}</div>`;
   document
     .querySelectorAll('.nav-item')
-    .forEach((e) => e.classList.toggle('active', e.dataset.section === section));
+    .forEach((e) => e.classList.toggle('active', e.dataset.section === store.section));
   $('#editor')
     .querySelectorAll('[data-path]')
     .forEach((e) =>
@@ -621,7 +296,7 @@ function renderEditor() {
       (e) =>
         (e.onclick = () => {
           snapshot('删除条目前');
-          current()[section].splice(+e.dataset.remove, 1);
+          current()[store.section].splice(+e.dataset.remove, 1);
           save();
           renderEditor();
           renderPreview();
@@ -632,7 +307,7 @@ function renderEditor() {
     .forEach(
       (e) =>
         (e.onclick = () => {
-          let a = current()[section],
+          let a = current()[store.section],
             i = +e.dataset.move,
             j = i + +e.dataset.dir;
           [a[i], a[j]] = [a[j], a[i]];
@@ -656,19 +331,19 @@ function renderEditor() {
       experience: { company: '', role: '', start: '', end: '', bullets: [] },
       projects: { title: '', award: '', start: '', end: '', bullets: [] },
       skills: { label: '', text: '' },
-    }[section];
-    current()[section].push({ id: crypto.randomUUID(), ...empty });
+    }[store.section];
+    current()[store.section].push({ id: crypto.randomUUID(), ...empty });
     save();
     renderEditor();
     renderPreview();
   });
   $('[data-next]')?.addEventListener('click', (e) => {
-    section = e.currentTarget.dataset.next;
+    store.section = e.currentTarget.dataset.next;
     renderEditor();
   });
-  if (section === 'basics') bindPhotoEditor();
-  if (section === 'style') bindStyle();
-  if (section === 'terms') {
+  if (store.section === 'basics') bindPhotoEditor();
+  if (store.section === 'style') bindStyle();
+  if (store.section === 'terms') {
     renderTerms('');
     $('#terms-search').oninput = (e) => renderTerms(e.target.value);
   }
@@ -737,7 +412,7 @@ async function cropPhoto() {
   b.photo = c.toDataURL('image/jpeg', 0.9);
 }
 function renderStyle() {
-  return `<div class="form-grid"><label class="field"><span>中文字体</span><select data-font="fontCN">${['Arial Unicode MS', 'Microsoft YaHei', 'SimSun', 'PingFang SC', 'Noto Sans CJK SC'].map((x) => `<option ${state.style.fontCN === x ? 'selected' : ''}>${x}</option>`).join('')}</select></label><label class="field"><span>英文字体</span><select data-font="fontEN">${['Arial', 'Calibri', 'Times New Roman', 'Georgia', 'Helvetica'].map((x) => `<option ${state.style.fontEN === x ? 'selected' : ''}>${x}</option>`).join('')}</select></label></div>${[
+  return `<div class="form-grid"><label class="field"><span>中文字体</span><select data-font="fontCN">${['Arial Unicode MS', 'Microsoft YaHei', 'SimSun', 'PingFang SC', 'Noto Sans CJK SC'].map((x) => `<option ${store.state.style.fontCN === x ? 'selected' : ''}>${x}</option>`).join('')}</select></label><label class="field"><span>英文字体</span><select data-font="fontEN">${['Arial', 'Calibri', 'Times New Roman', 'Georgia', 'Helvetica'].map((x) => `<option ${store.state.style.fontEN === x ? 'selected' : ''}>${x}</option>`).join('')}</select></label></div>${[
     ['bodySize', '正文字号', 9, 12, 0.5, 'pt'],
     ['titleSize', '姓名字号', 18, 28, 1, 'pt'],
     ['lineHeight', '正文行距', 1.1, 1.65, 0.05, '倍'],
@@ -745,17 +420,17 @@ function renderStyle() {
   ]
     .map(
       ([key, label, min, max, step, unit]) =>
-        `<div class="style-control"><label for="setting-${key}">${label}<output id="value-${key}">${state.style[key]} ${unit}</output></label><input type="range" id="setting-${key}" data-setting="${key}" min="${min}" max="${max}" step="${step}" value="${state.style[key]}"></div>`,
+        `<div class="style-control"><label for="setting-${key}">${label}<output id="value-${key}">${store.state.style[key]} ${unit}</output></label><input type="range" id="setting-${key}" data-setting="${key}" min="${min}" max="${max}" step="${step}" value="${store.state.style[key]}"></div>`,
     )
     .join(
       '',
-    )}<button class="btn" id="reset-style">恢复经典单栏设置</button><div class="font-audit"><strong>参考 PDF 字体检测</strong><p>${state.referenceFontAudit?.fonts?.length ? '已读取参考字体：<br>' + state.referenceFontAudit.fonts.map((x) => `<code>${esc(x)}</code>`).join(' ') + '<br>已识别字体名称；仍需确认本机字体可用，并对照字号和间距。' : '还没有参考 PDF，尚未验证与超级简历字体一致。导入参考文件后可读取其中的字体名称。'}</p><button class="btn" id="font-import">导入参考 PDF</button></div><p style="font-size:10px;color:#8d9c96;line-height:1.8">预览依赖本机字体。PDF 导出保留浏览器实际渲染的字形；Word 文件可继续编辑。</p>`;
+    )}<button class="btn" id="reset-style">恢复经典单栏设置</button><div class="font-audit"><strong>参考 PDF 字体检测</strong><p>${store.state.referenceFontAudit?.fonts?.length ? '已读取参考字体：<br>' + store.state.referenceFontAudit.fonts.map((x) => `<code>${esc(x)}</code>`).join(' ') + '<br>已识别字体名称；仍需确认本机字体可用，并对照字号和间距。' : '还没有参考 PDF，尚未验证与超级简历字体一致。导入参考文件后可读取其中的字体名称。'}</p><button class="btn" id="font-import">导入参考 PDF</button></div><p style="font-size:10px;color:#8d9c96;line-height:1.8">预览依赖本机字体。PDF 导出保留浏览器实际渲染的字形；Word 文件可继续编辑。</p>`;
 }
 function bindStyle() {
   document.querySelectorAll('[data-font]').forEach(
     (e) =>
       (e.onchange = () => {
-        state.style[e.dataset.font] = e.value;
+        store.state.style[e.dataset.font] = e.value;
         save();
         renderPreview();
       }),
@@ -763,7 +438,7 @@ function bindStyle() {
   document.querySelectorAll('[data-setting]').forEach(
     (e) =>
       (e.oninput = () => {
-        state.style[e.dataset.setting] = +e.value;
+        store.state.style[e.dataset.setting] = +e.value;
         $('#value-' + e.dataset.setting).textContent =
           e.value +
           (e.dataset.setting === 'lineHeight'
@@ -776,7 +451,7 @@ function bindStyle() {
       }),
   );
   $('#reset-style').onclick = () => {
-    state.style = clone(defaultState.style);
+    store.state.style = clone(defaultState.style);
     save();
     renderEditor();
     renderPreview();
@@ -823,16 +498,16 @@ function renderPreview() {
   preview.style.padding = vs.style.marginMm + 'mm';
   preview.style.color = vs.style.accent || '#111111';
   preview.querySelector('h1').style.fontSize = vs.style.titleSize + 'pt';
-  preview.style.transform = `scale(${scale})`;
+  preview.style.transform = `scale(${store.scale})`;
   preview.style.transformOrigin = 'top left';
   requestAnimationFrame(() => {
     const w = preview.offsetWidth,
       h = preview.offsetHeight;
-    $('#sheet-wrap').style.width = w * scale + 'px';
-    $('#sheet-wrap').style.height = h * scale + 'px';
+    $('#sheet-wrap').style.width = w * store.scale + 'px';
+    $('#sheet-wrap').style.height = h * store.scale + 'px';
     const pages = Math.max(1, Math.ceil(h / 1122.6 - 0.015));
     $('#page-status').textContent = pages === 1 ? '一页预览' : `约 ${pages} 页`;
-    $('#zoom-label').textContent = Math.round(scale * 100) + '%';
+    $('#zoom-label').textContent = Math.round(store.scale * 100) + '%';
   });
   $('#font-summary').textContent = `${vs.style.bodySize}pt · ${vs.style.fontEN}`;
   const langToggle = $('#lang-toggle');
@@ -844,10 +519,10 @@ function renderPreview() {
       : '切换英文简历 / Switch to English';
   }
   const langSwitch = document.querySelector('.language-switch');
-  if (langSwitch) langSwitch.style.display = section === 'library' ? 'none' : '';
+  if (langSwitch) langSwitch.style.display = store.section === 'library' ? 'none' : '';
   const titleInput = $('#document-title');
   titleInput.value = vs.meta?.title || '';
-  titleInput.disabled = section === 'library';
+  titleInput.disabled = store.section === 'library';
   document.title = vs.meta?.title || '简历工坊 · Resume Studio';
   const paper = preview.cloneNode(true);
   paper.removeAttribute('id');
@@ -862,7 +537,7 @@ function renderTerms(q) {
     rows
       .map(
         (t) =>
-          `<div class="term"><div class="term-head"><strong>${esc(t.cn)}</strong><span class="badge ${t.evidence === 'supported' ? '' : 'pending'}">${t.evidence === 'supported' ? '有经历依据' : '待补充依据'}</span></div><div class="term-en">${esc(t.en)}</div><p>${esc(t.definition)}</p><p>${esc(t.resumeEvidence)}</p><div class="term-actions"><a href="${esc(t.sourceUrl)}" target="_blank" rel="noopener noreferrer">BOSS 公开摘录 ↗</a><button data-copy="${esc(state.language === 'en' ? t.en : t.cn)}">复制词汇</button></div></div>`,
+          `<div class="term"><div class="term-head"><strong>${esc(t.cn)}</strong><span class="badge ${t.evidence === 'supported' ? '' : 'pending'}">${t.evidence === 'supported' ? '有经历依据' : '待补充依据'}</span></div><div class="term-en">${esc(t.en)}</div><p>${esc(t.definition)}</p><p>${esc(t.resumeEvidence)}</p><div class="term-actions"><a href="${esc(t.sourceUrl)}" target="_blank" rel="noopener noreferrer">BOSS 公开摘录 ↗</a><button data-copy="${esc(store.state.language === 'en' ? t.en : t.cn)}">复制词汇</button></div></div>`,
       )
       .join('') || '<p>没有匹配的词汇。</p>';
   $('#term-list')
@@ -881,19 +556,19 @@ function renderTerms(q) {
 }
 function renderVersions() {
   openModal(
-    `<h2>本机版本记录</h2><p>版本只保存在当前浏览器，导出 JSON 可以跨设备继续编辑。</p><button class="btn primary" id="save-version">保存当前版本</button><div>${versions.length ? versions.map((v, i) => `<div class="version-row"><div><strong>${esc(v.label)}</strong><small>${esc(v.time)}</small></div><button class="btn" data-restore="${i}">恢复</button></div>`).join('') : '<p>还没有手动保存的版本。</p>'}</div><div class="modal-actions"><button class="btn" data-close>关闭</button></div>`,
+    `<h2>本机版本记录</h2><p>版本只保存在当前浏览器，导出 JSON 可以跨设备继续编辑。</p><button class="btn primary" id="save-version">保存当前版本</button><div>${store.versions.length ? store.versions.map((v, i) => `<div class="version-row"><div><strong>${esc(v.label)}</strong><small>${esc(v.time)}</small></div><button class="btn" data-restore="${i}">恢复</button></div>`).join('') : '<p>还没有手动保存的版本。</p>'}</div><div class="modal-actions"><button class="btn" data-close>关闭</button></div>`,
   );
   $('#save-version').onclick = () => {
-    snapshot(state.meta.title);
+    snapshot(store.state.meta.title);
     renderVersions();
     notify('当前版本已保存。');
   };
   document.querySelectorAll('[data-restore]').forEach(
     (e) =>
       (e.onclick = () => {
-        const s = clone(versions[+e.dataset.restore].state);
+        const s = clone(store.versions[+e.dataset.restore].state);
         snapshot('恢复前备份');
-        state = s;
+        store.state = s;
         save();
         renderEditor();
         renderPreview();
@@ -909,18 +584,18 @@ function showImport(result) {
     );
     $('#confirm-import').onclick = () => {
       snapshot('导入前备份');
-      if (result.state) state = result.state;
+      if (result.state) store.state = result.state;
       else
         current().projects.push({
           id: crypto.randomUUID(),
-          title: state.language === 'zh' ? '导入内容 待整理' : 'Imported content to organize',
+          title: store.state.language === 'zh' ? '导入内容 待整理' : 'Imported content to organize',
           award: '',
           start: '',
           end: '',
           bullets: $('#import-review').value.split('\n').filter(Boolean),
         });
       save();
-      section = 'projects';
+      store.section = 'projects';
       renderEditor();
       renderPreview();
       $('#modal').close();
@@ -928,7 +603,7 @@ function showImport(result) {
     };
   } else if (result.state) {
     snapshot('导入前备份');
-    state = result.state;
+    store.state = result.state;
     save();
     renderEditor();
     renderPreview();
@@ -941,7 +616,7 @@ $('#import-file').onchange = async (e) => {
   if (!f) return;
   try {
     notify('正在读取文件…');
-    showImport(await importFile(f, clone(state)));
+    showImport(await importFile(f, clone(store.state)));
   } catch (err) {
     notify('导入失败：' + (err.message || '文件格式不支持'));
   }
@@ -1009,7 +684,7 @@ if (downloadBtn) {
 }
 $('#version-btn').onclick = renderVersions;
 $('#document-title').oninput = (e) => {
-  state.meta.title = e.target.value;
+  store.state.meta.title = e.target.value;
   save();
 };
 $('a.brand').onclick = (e) => e.preventDefault();
@@ -1018,25 +693,25 @@ function $$nav() {
   document.querySelectorAll('[data-section]').forEach(
     (e) =>
       (e.onclick = () => {
-        section = e.dataset.section;
+        store.section = e.dataset.section;
         renderEditor();
       }),
   );
   const langToggle = $('#lang-toggle');
   if (langToggle)
     langToggle.onclick = () => {
-      state.language = state.language === 'zh' ? 'en' : 'zh';
+      store.state.language = store.state.language === 'zh' ? 'en' : 'zh';
       save();
       renderEditor();
       renderPreview();
     };
 }
 $('#zoom-in').onclick = () => {
-  scale = Math.min(1, +(scale + 0.05).toFixed(2));
+  store.scale = Math.min(1, +(store.scale + 0.05).toFixed(2));
   renderPreview();
 };
 $('#zoom-out').onclick = () => {
-  scale = Math.max(0.35, +(scale - 0.05).toFixed(2));
+  store.scale = Math.max(0.35, +(store.scale - 0.05).toFixed(2));
   renderPreview();
 };
 $('#help-btn').onclick = () =>
@@ -1061,7 +736,7 @@ $('#font-file').onchange = async (e) => {
       }
     }
     if (!found.size) throw new Error('未发现可读取的字体，文件可能已转为图片');
-    state.referenceFontAudit = {
+    store.state.referenceFontAudit = {
       fonts: [...found],
       fileName: f.name,
       checkedAt: new Date().toISOString(),
@@ -1088,7 +763,7 @@ window.addEventListener('resize', () => renderPreview());
 renderEditor();
 renderPreview();
 setTimeout(() => {
-  if (librarySeeded) notify('已载入 5 个虚构岗位演示。人物、机构、经历与数据均为示例。');
+  if (store.librarySeeded) notify('已载入 5 个虚构岗位演示。人物、机构、经历与数据均为示例。');
 }, 900);
 
 window.addEventListener('resume-io-warning', (e) =>
