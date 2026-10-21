@@ -1,0 +1,25 @@
+{
+  "name": "resume-studio",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Local-first bilingual resume editor with a resume library, A4 preview, and visual-accurate Word/PDF/PNG export.",
+  "type": "module",
+  "scripts": {
+    "dev": "node scripts/serve.mjs src",
+    "build": "node scripts/build.mjs",
+    "preview": "node scripts/serve.mjs dist",
+    "check": "node scripts/check.mjs",
+    "test": "npm run build && node tests/smoke.mjs",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "test:unit": "node --test tests/server.test.mjs tests/demo-photo.test.mjs tests/demo-content.test.mjs",
+    "verify": "npm run format:check && npm run check && npm run test:unit && npm test"
+  },
+  "devDependencies": {
+    "playwright-core": "^1.64.1",
+    "prettier": "3.9.10"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}

@@ -1,0 +1,10 @@
+node_modules/
+dist/
+private/
+site/
+.claude/
+.wondercv-profile/
+src/vendor/
+package-lock.json
+docs/screenshots/
+*.log
