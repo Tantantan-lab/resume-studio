@@ -242,8 +242,8 @@ const english = new Map(
     '已载入 5 个虚构岗位演示。人物、机构、经历与数据均为示例。':
       'Loaded 5 fictional role demos. All people, organizations, experience, and figures are examples.',
     '从一份材料，到多版简历': 'One set of experience, multiple resumes',
-    '导入 Word、JSON 或文本。Word 导入后需核对识别结果。':
-      'Import Word, JSON, or text. Check the recognized content after a Word import.',
+    '导入 Word、PDF、JSON 或文本。Word/PDF 导入后需核对识别结果。':
+      'Import Word, PDF, JSON, or text. Check the recognized content after a Word or PDF import.',
     '按模块编辑内容，分别完善中文与英文版本。':
       'Edit each section and maintain the Chinese and English resumes separately.',
     '在“纸面设计”切换模板、主题色和照片显示，再调整字体与留白。':
@@ -340,6 +340,8 @@ const english = new Map(
     '文件不能超过 10 MB。': 'The file must not exceed 10 MB.',
     'Word 导入组件未载入，请刷新页面后重试。':
       'The Word import component did not load. Refresh and try again.',
+    'PDF 导入组件未载入，请刷新页面后重试。':
+      'The PDF import component did not load. Refresh and try again.',
     'Word 文件包含过多条目，请使用简化后的 .docx。':
       'The Word document contains too many entries. Use a simplified .docx file.',
     '该文件不是有效的 Word .docx 文档。': 'This is not a valid Word .docx document.',
@@ -354,10 +356,10 @@ const english = new Map(
     '已读取文字。请核对后复制到对应字段；当前简历保持不变。':
       'Text read. Review it and copy it into the appropriate fields. The current resume is unchanged.',
     '文本预览最多保留 20 万字。': 'The text preview is limited to 200,000 characters.',
-    '当前支持 JSON、Word (.docx)、TXT 和 Markdown 导入。PDF 请先转换为可编辑 Word 或文字。':
-      'Import JSON, Word (.docx), TXT, or Markdown. Convert PDFs to editable Word or text first.',
-    '不支持此格式。请选择 JSON、Word (.docx)、TXT 或 Markdown 文件。':
-      'Unsupported format. Choose JSON, Word (.docx), TXT, or Markdown.',
+    '当前支持 JSON、Word (.docx)、TXT、Markdown 和 PDF（文字版）导入。扫描版 PDF 请先转换为可编辑 Word 或文字。':
+      'Import JSON, Word (.docx), TXT, Markdown, or text-based PDF. Convert scanned PDFs to editable Word or text first.',
+    '不支持此格式。请选择 JSON、Word (.docx)、PDF、TXT 或 Markdown 文件。':
+      'Unsupported format. Choose JSON, Word (.docx), PDF, TXT, or Markdown.',
     '无法读取此文件。': 'Unable to read this file.',
     'PDF 导出组件未载入，请刷新页面后再试。':
       'The PDF export component did not load. Refresh and try again.',

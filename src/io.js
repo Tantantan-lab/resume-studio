@@ -529,6 +529,22 @@ function draftFromParagraphs(paragraphs, currentState, warnings) {
   return state;
 }
 
+// Reconstruct PDF text items in reading order: spaces between Latin words,
+// none between CJK characters, line breaks where the PDF marks them.
+const CJK_CHAR = /[\u2e80-\u9fff\uf900-\ufaff\u3000-\u303f\uff00-\uffef]/;
+function joinPdfItems(items) {
+  let out = '';
+  for (const item of items) {
+    const text = typeof item?.str === 'string' ? item.str : '';
+    if (!text) continue;
+    if (out && !out.endsWith('\n') && !(CJK_CHAR.test(out.at(-1)) && CJK_CHAR.test(text[0])))
+      out += ' ';
+    out += text;
+    if (item.hasEOL) out += '\n';
+  }
+  return out.trim();
+}
+
 export async function importFile(file, currentState) {
   const warnings = [];
   try {
@@ -582,10 +598,24 @@ export async function importFile(file, currentState) {
       if (file.size > MAX_TEXT) warnings.push('文本预览最多保留 20 万字。');
       return { rawText, warnings };
     }
-    if (extension === 'pdf')
-      throw new Error(
-        '当前支持 JSON、Word (.docx)、TXT 和 Markdown 导入。PDF 请先转换为可编辑 Word 或文字。',
-      );
+    if (extension === 'pdf') {
+      const pdfjs = window.pdfjsLib;
+      if (!pdfjs) throw new Error('PDF 导入组件未载入，请刷新页面后重试。');
+      pdfjs.GlobalWorkerOptions.workerSrc = './vendor/pdf.worker.min.js';
+      const doc = await pdfjs.getDocument({ data: await file.arrayBuffer() }).promise;
+      const pages = [];
+      for (let pageIndex = 1; pageIndex <= Math.min(doc.numPages, 60); pageIndex++) {
+        const content = await doc.getPage(pageIndex).then((page) => page.getTextContent());
+        const text = joinPdfItems(content.items);
+        if (text) pages.push(text);
+      }
+      await doc.destroy?.();
+      const rawText = clean(pages.join('\n\n'), MAX_TEXT);
+      if (!rawText) throw new Error('未读取到可编辑正文，图片扫描件请先转成文字。');
+      warnings.push('已读取文字。请核对后复制到对应字段；当前简历保持不变。');
+      if (pages.join('\n\n').length > MAX_TEXT) warnings.push('文本预览最多保留 20 万字。');
+      return { rawText, warnings };
+    }
     throw new Error('不支持此格式。请选择 JSON、Word (.docx)、TXT 或 Markdown 文件。');
   } catch (error) {
     return {

@@ -35,6 +35,31 @@ function assert(condition, message) {
   if (!condition) throw new Error(message);
 }
 
+// Minimal one-page PDF with Helvetica text; xref offsets are computed at build time.
+function buildTextPdf(lines) {
+  const content = `BT /F1 12 Tf 72 720 Td ${lines
+    .map((line) => `(${line}) Tj T*`)
+    .join(' ')} ET`;
+  const objects = [
+    '<< /Type /Catalog /Pages 2 0 R >>',
+    '<< /Type /Pages /Kids [3 0 R] /Count 1 >>',
+    '<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Resources << /Font << /F1 4 0 R >> >> /Contents 5 0 R >>',
+    '<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>',
+    `<< /Length ${content.length} >>\nstream\n${content}\nendstream`,
+  ];
+  let pdf = '%PDF-1.4\n';
+  const offsets = [];
+  for (let index = 0; index < objects.length; index++) {
+    offsets.push(pdf.length);
+    pdf += `${index + 1} 0 obj\n${objects[index]}\nendobj\n`;
+  }
+  const xref = pdf.length;
+  pdf += `xref\n0 ${objects.length + 1}\n0000000000 65535 f \n`;
+  for (const offset of offsets) pdf += `${String(offset).padStart(10, '0')} 00000 n \n`;
+  pdf += `trailer\n<< /Size ${objects.length + 1} /Root 1 0 R >>\nstartxref\n${xref}\n%%EOF`;
+  return Buffer.from(pdf, 'binary');
+}
+
 try {
   await sleep(700);
   browser = await chromium.launch({ executablePath, headless: true });
@@ -403,6 +428,19 @@ try {
   await upgradeContext.close();
 
   await runPaperDesignTests(browser, `http://127.0.0.1:${PORT}/`, downloadDir);
+
+  // PDF import: a text-based PDF extracts into the review modal.
+  await page.click('#import-btn');
+  await page.setInputFiles('#import-file', {
+    name: 'fixture.pdf',
+    mimeType: 'application/pdf',
+    buffer: buildTextPdf(['Zhang San / Marketing', 'Phone 13800000000']),
+  });
+  await page.waitForSelector('#import-review', { timeout: 20000 });
+  const importedText = await page.locator('#import-review').inputValue();
+  assert(importedText.includes('Zhang San'), 'PDF import should extract the name');
+  assert(importedText.includes('13800000000'), 'PDF import should extract the phone');
+  await page.click('#modal [data-close]');
 
   assert(pageErrors.length === 0, `page errors: ${pageErrors.join('; ')}`);
   console.log('PASS: library preview/edit, titles, photo, five downloads and text PDF');

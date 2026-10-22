@@ -65,7 +65,7 @@ $('#zoom-out').onclick = () => {
 };
 $('#help-btn').onclick = () =>
   openModal(
-    `<h2>从一份材料，到多版简历</h2><ol><li>导入 Word、JSON 或文本。Word 导入后需核对识别结果。</li><li>按模块编辑内容，分别完善中文与英文版本。</li><li>在“纸面设计”切换模板、主题色和照片显示，再调整字体与留白。</li><li>点击右上角「下载」，可选择与预览一致的 Word/PDF、可编辑 Word、图片或 JSON。</li><li>PDF（图片版）直接生成；PDF（文字版）在打印窗口另存，文字可复制/搜索；可编辑 Word 排版为近似值；JSON 可完整保留双语内容和版式。</li></ol><p>岗位词库来自公开招聘摘录，不代表你已具备所有技能。</p><div class="modal-actions"><button class="btn primary" data-close>知道了</button></div>`,
+    `<h2>从一份材料，到多版简历</h2><ol><li>导入 Word、PDF、JSON 或文本。Word/PDF 导入后需核对识别结果。</li><li>按模块编辑内容，分别完善中文与英文版本。</li><li>在“纸面设计”切换模板、主题色和照片显示，再调整字体与留白。</li><li>点击右上角「下载」，可选择与预览一致的 Word/PDF、可编辑 Word、图片或 JSON。</li><li>PDF（图片版）直接生成；PDF（文字版）在打印窗口另存，文字可复制/搜索；可编辑 Word 排版为近似值；JSON 可完整保留双语内容和版式。</li></ol><p>岗位词库来自公开招聘摘录，不代表你已具备所有技能。</p><div class="modal-actions"><button class="btn primary" data-close>知道了</button></div>`,
   );
 $('#modal').addEventListener('click', (e) => {
   if (e.target === $('#modal')) $('#modal').close();
