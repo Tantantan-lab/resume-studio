@@ -37,9 +37,7 @@ function assert(condition, message) {
 
 // Minimal one-page PDF with Helvetica text; xref offsets are computed at build time.
 function buildTextPdf(lines) {
-  const content = `BT /F1 12 Tf 72 720 Td ${lines
-    .map((line) => `(${line}) Tj T*`)
-    .join(' ')} ET`;
+  const content = `BT /F1 12 Tf 72 720 Td ${lines.map((line) => `(${line}) Tj T*`).join(' ')} ET`;
   const objects = [
     '<< /Type /Catalog /Pages 2 0 R >>',
     '<< /Type /Pages /Kids [3 0 R] /Count 1 >>',
